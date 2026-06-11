@@ -21,6 +21,11 @@ const RUTAS = {
   refrescar: 'M20 8A8 8 0 1 0 21 14m-1-9v4h-4',
   calendario: 'M5 5h14v16H5V5zm0 5h14M9 3v4m6-4v4',
   flecha: 'M9 6l6 6-6 6',
+  sol: 'M12 12m-4 0a4 4 0 1 0 8 0 4 4 0 1 0-8 0M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4',
+  luna: 'M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z',
+  ayuda: 'M12 12m-10 0a10 10 0 1 0 20 0 10 10 0 1 0-20 0M9.5 9a2.6 2.6 0 0 1 5 1c0 1.8-2.5 2-2.5 3.5M12 17v.5',
+  copiar: 'M9 9h11v12H9V9zm-5 8V3h11',
+  externo: 'M14 4h6v6m0-6L10 14M9 5H4v15h15v-5',
 } as const
 
 export type NombreIcono = keyof typeof RUTAS

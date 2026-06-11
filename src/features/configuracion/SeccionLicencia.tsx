@@ -61,7 +61,7 @@ export function SeccionLicencia() {
       </div>
 
       {estado?.estado === 'vencida' && (
-        <p className="mini" style={{ color: 'var(--ambar)' }}>
+        <p className="mini" style={{ color: 'var(--warning)' }}>
           {t('licencia.estadoVencida', { fecha: formatoFecha(estado.vencio) })}
         </p>
       )}
@@ -86,7 +86,7 @@ export function SeccionLicencia() {
             </div>
           </div>
           {mensaje === 'invalida' && (
-            <p className="mini" style={{ color: 'var(--rojo)' }}>
+            <p className="mini" style={{ color: 'var(--loss)' }}>
               {t('licencia.estadoInvalida')}
             </p>
           )}

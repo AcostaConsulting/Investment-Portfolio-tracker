@@ -1,7 +1,18 @@
 /* ============================================================
-   Tracker de Portafolio — sistema de diseño "Libro Mayor"
-   Papel cálido y tinta; serif editorial para títulos, mono
-   tabular para cifras, rosa mexicano como acento de marca.
+   Tracker de Portafolio — sistema de diseño v2 "Libro de Acero"
+   Slate profundo + acento índigo. Oscuro por defecto.
+
+   ELEMENTO FIRMA (decisión de diseño):
+   La firma de la app sigue siendo la del libro contable, ahora en
+   acero: (1) la REGLA DOBLE bajo encabezados de tabla y modales —
+   el gesto tipográfico de los libros mayores impresos que ninguna
+   app de finanzas genérica usa; (2) TODA cifra monetaria va en mono
+   tabular (IBM Plex Mono) — columnas de dinero que se alinean al
+   centavo, como un estado de cuenta bien hecho; (3) los títulos en
+   serif Fraunces con eje óptico alto. La combinación serif editorial
+   + mono contable + índigo sobrio transmite precisión y confianza
+   sin caer en el azul-banco genérico: es un libro mayor moderno,
+   no un dashboard de SaaS.
    ============================================================ */
 
 :root {
@@ -10,59 +21,61 @@
   --f-mono: 'IBM Plex Mono', ui-monospace, monospace;
 
   --radio: 6px;
-  --sombra: 0 1px 2px rgba(20, 16, 8, 0.06), 0 4px 16px rgba(20, 16, 8, 0.05);
+  --sombra: 0 1px 2px rgba(2, 6, 23, 0.06), 0 4px 16px rgba(2, 6, 23, 0.05);
   --transicion: 160ms cubic-bezier(0.3, 0.7, 0.4, 1);
 }
 
 [data-tema='claro'] {
   color-scheme: light;
-  /* Colores por clase de activo: la renta fija lleva el rosa de la casa */
-  --c-accion: #46808f;
-  --c-cripto: #c0913a;
-  --c-renta-fija: #c40f63;
-  --papel: #f5efe3;
-  --superficie: #fdfaf3;
-  --superficie-2: #efe7d4;
-  --tinta: #231f17;
-  --tinta-2: #6f6755;
-  --tinta-3: #a59c89;
-  --linea: #ddd3bc;
-  --linea-fuerte: #231f17;
-  --acento: #c40f63;
-  --acento-tinta: #ffffff;
-  --acento-suave: rgba(196, 15, 99, 0.07);
-  --verde: #1b7a4b;
-  --verde-suave: rgba(27, 122, 75, 0.1);
-  --rojo: #bb3a2a;
-  --rojo-suave: rgba(187, 58, 42, 0.1);
-  --ambar: #9a6d14;
-  --ambar-suave: rgba(154, 109, 20, 0.12);
-  --grano-opacidad: 0.5;
+  --surface-0: #f8fafc;
+  --surface-1: #ffffff;
+  --surface-2: #f1f5f9;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --border: #e2e8f0;
+  --border-strong: #0f172a;
+  --accent: #4f46e5;
+  --accent-dim: #3730a3;
+  --accent-contrast: #ffffff;
+  --accent-subtle: #eef2ff;
+  --gain: #059669;
+  --gain-subtle: rgba(5, 150, 105, 0.1);
+  --loss: #dc2626;
+  --loss-subtle: rgba(220, 38, 38, 0.09);
+  --warning: #d97706;
+  --warning-subtle: rgba(217, 119, 6, 0.12);
+  /* Colores por clase de activo: la renta fija lleva el índigo de la casa */
+  --c-accion: #0e7490;
+  --c-cripto: #b45309;
+  --c-renta-fija: #4f46e5;
+  --grano-opacidad: 0.35;
 }
 
 [data-tema='oscuro'] {
   color-scheme: dark;
-  --c-accion: #62a3b5;
-  --c-cripto: #d9ab4e;
-  --c-renta-fija: #ff4d9d;
-  --papel: #14110d;
-  --superficie: #1d1914;
-  --superficie-2: #272118;
-  --tinta: #ece4d2;
-  --tinta-2: #9d927d;
-  --tinta-3: #6e6452;
-  --linea: #352e23;
-  --linea-fuerte: #ece4d2;
-  --acento: #ff4d9d;
-  --acento-tinta: #1d1914;
-  --acento-suave: rgba(255, 77, 157, 0.09);
-  --verde: #54c189;
-  --verde-suave: rgba(84, 193, 137, 0.12);
-  --rojo: #e8705f;
-  --rojo-suave: rgba(232, 112, 95, 0.13);
-  --ambar: #d9a93f;
-  --ambar-suave: rgba(217, 169, 63, 0.14);
-  --grano-opacidad: 0.35;
+  --surface-0: #0f172a;
+  --surface-1: #1e293b;
+  --surface-2: #334155;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --border: #2c3a4f;
+  --border-strong: #f1f5f9;
+  --accent: #818cf8;
+  --accent-dim: #6366f1;
+  --accent-contrast: #0f172a;
+  --accent-subtle: rgba(99, 102, 241, 0.14);
+  --gain: #34d399;
+  --gain-subtle: rgba(52, 211, 153, 0.12);
+  --loss: #f87171;
+  --loss-subtle: rgba(248, 113, 113, 0.12);
+  --warning: #fbbf24;
+  --warning-subtle: rgba(251, 191, 36, 0.12);
+  --c-accion: #38bdf8;
+  --c-cripto: #f59e0b;
+  --c-renta-fija: #818cf8;
+  --grano-opacidad: 0.3;
   --sombra: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 20px rgba(0, 0, 0, 0.35);
 }
 
@@ -78,8 +91,8 @@ body,
 
 body {
   margin: 0;
-  background: var(--papel);
-  color: var(--tinta);
+  background: var(--surface-0);
+  color: var(--text-primary);
   font-family: var(--f-ui);
   font-size: 14px;
   line-height: 1.5;
@@ -99,8 +112,8 @@ body::after {
 }
 
 ::selection {
-  background: var(--acento);
-  color: var(--acento-tinta);
+  background: var(--accent);
+  color: var(--accent-contrast);
 }
 
 h1,
@@ -123,9 +136,9 @@ select,
 textarea {
   font-family: inherit;
   font-size: inherit;
-  color: var(--tinta);
-  background: var(--superficie);
-  border: 1px solid var(--linea);
+  color: var(--text-primary);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
   border-radius: var(--radio);
   padding: 7px 10px;
   outline: none;
@@ -136,11 +149,11 @@ textarea {
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: var(--acento);
+  border-color: var(--accent);
 }
 
 input[type='checkbox'] {
-  accent-color: var(--acento);
+  accent-color: var(--accent);
   width: 16px;
   height: 16px;
 }
@@ -155,11 +168,11 @@ input[type='checkbox'] {
 }
 
 .positivo {
-  color: var(--verde);
+  color: var(--gain);
 }
 
 .negativo {
-  color: var(--rojo);
+  color: var(--loss);
 }
 
 .etiqueta {
@@ -167,11 +180,11 @@ input[type='checkbox'] {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.09em;
-  color: var(--tinta-2);
+  color: var(--text-secondary);
 }
 
 .suave {
-  color: var(--tinta-2);
+  color: var(--text-secondary);
 }
 
 .mini {
@@ -181,10 +194,10 @@ input[type='checkbox'] {
 /* Regla doble contable: el sello de la casa */
 .regla-doble {
   border: 0;
-  border-top: 1px solid var(--linea-fuerte);
+  border-top: 1px solid var(--border-strong);
   margin: 2px 0 0;
   padding-top: 2px;
-  border-bottom: 3px double var(--linea-fuerte);
+  border-bottom: 3px double var(--border-strong);
   opacity: 0.85;
 }
 
@@ -194,9 +207,9 @@ input[type='checkbox'] {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  border: 1px solid var(--linea);
-  background: var(--superficie);
-  color: var(--tinta);
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  color: var(--text-primary);
   border-radius: var(--radio);
   padding: 7px 14px;
   font-weight: 500;
@@ -204,24 +217,24 @@ input[type='checkbox'] {
 }
 
 .btn:hover {
-  border-color: var(--tinta-2);
+  border-color: var(--text-secondary);
 }
 
 .btn-primario {
-  background: var(--acento);
-  border-color: var(--acento);
-  color: var(--acento-tinta);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
   font-weight: 600;
 }
 
 .btn-primario:hover {
   filter: brightness(1.08);
-  border-color: var(--acento);
+  border-color: var(--accent);
 }
 
 .btn-peligro:hover {
-  border-color: var(--rojo);
-  color: var(--rojo);
+  border-color: var(--loss);
+  color: var(--loss);
 }
 
 .btn-fantasma {
@@ -230,7 +243,7 @@ input[type='checkbox'] {
 }
 
 .btn-fantasma:hover {
-  background: var(--acento-suave);
+  background: var(--accent-subtle);
   border-color: transparent;
 }
 
@@ -256,7 +269,7 @@ input[type='checkbox'] {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--linea);
+  border-right: 1px solid var(--border);
   padding: 18px 12px 14px;
   gap: 2px;
 }
@@ -272,12 +285,12 @@ input[type='checkbox'] {
 
 .lateral-marca em {
   font-style: italic;
-  color: var(--acento);
+  color: var(--accent);
 }
 
 .lateral-lema {
   padding: 2px 10px 14px;
-  border-bottom: 1px solid var(--linea);
+  border-bottom: 1px solid var(--border);
   margin-bottom: 12px;
 }
 
@@ -292,20 +305,20 @@ input[type='checkbox'] {
   border-left: 2px solid transparent;
   border-radius: 0 var(--radio) var(--radio) 0;
   padding: 8px 10px;
-  color: var(--tinta-2);
+  color: var(--text-secondary);
   font-weight: 500;
   transition: all var(--transicion);
 }
 
 .nav-item:hover {
-  color: var(--tinta);
-  background: var(--acento-suave);
+  color: var(--text-primary);
+  background: var(--accent-subtle);
 }
 
 .nav-item.activo {
-  color: var(--tinta);
-  border-left-color: var(--acento);
-  background: var(--acento-suave);
+  color: var(--text-primary);
+  border-left-color: var(--accent);
+  background: var(--accent-subtle);
   font-weight: 600;
 }
 
@@ -337,14 +350,14 @@ input[type='checkbox'] {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   padding: 3px 10px;
-  border: 1px solid var(--linea);
+  border: 1px solid var(--border);
   border-radius: 999px;
-  color: var(--tinta-2);
+  color: var(--text-secondary);
 }
 
 .sello-plan.pago {
-  border-color: var(--acento);
-  color: var(--acento);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .contenido {
@@ -382,8 +395,8 @@ input[type='checkbox'] {
 /* ---------- tarjetas y kpis ---------- */
 
 .tarjeta {
-  background: var(--superficie);
-  border: 1px solid var(--linea);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
   border-radius: var(--radio);
   padding: 16px 18px;
   box-shadow: var(--sombra);
@@ -432,8 +445,8 @@ input[type='checkbox'] {
 /* ---------- tablas libro mayor ---------- */
 
 .tabla-marco {
-  background: var(--superficie);
-  border: 1px solid var(--linea);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
   border-radius: var(--radio);
   box-shadow: var(--sombra);
   overflow: hidden;
@@ -449,15 +462,15 @@ table.libro th {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.09em;
-  color: var(--tinta-2);
+  color: var(--text-secondary);
   text-align: left;
   padding: 10px 14px 8px;
-  border-bottom: 3px double var(--linea-fuerte);
+  border-bottom: 3px double var(--border-strong);
 }
 
 table.libro td {
   padding: 9px 14px;
-  border-bottom: 1px solid var(--linea);
+  border-bottom: 1px solid var(--border);
   vertical-align: baseline;
 }
 
@@ -470,7 +483,7 @@ table.libro tbody tr {
 }
 
 table.libro tbody tr:hover {
-  background: var(--acento-suave);
+  background: var(--accent-subtle);
 }
 
 table.libro .num,
@@ -479,7 +492,7 @@ table.libro th.num {
 }
 
 table.libro tfoot td {
-  border-top: 3px double var(--linea-fuerte);
+  border-top: 3px double var(--border-strong);
   border-bottom: none;
   font-weight: 600;
   padding: 10px 14px;
@@ -506,18 +519,18 @@ tr:hover .fila-acciones {
   border: none;
   background: none;
   border-radius: 5px;
-  color: var(--tinta-2);
+  color: var(--text-secondary);
   transition: all var(--transicion);
 }
 
 .btn-icono:hover {
-  background: var(--superficie-2);
-  color: var(--tinta);
+  background: var(--surface-2);
+  color: var(--text-primary);
 }
 
 .btn-icono.peligro:hover {
-  background: var(--rojo-suave);
-  color: var(--rojo);
+  background: var(--loss-subtle);
+  color: var(--loss);
 }
 
 /* ---------- chips y badges ---------- */
@@ -530,33 +543,33 @@ tr:hover .fila-acciones {
   font-weight: 600;
   padding: 2px 9px;
   border-radius: 999px;
-  border: 1px solid var(--linea);
-  color: var(--tinta-2);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
   white-space: nowrap;
 }
 
 .chip.acento {
   border-color: transparent;
-  background: var(--acento-suave);
-  color: var(--acento);
+  background: var(--accent-subtle);
+  color: var(--accent);
 }
 
 .chip.verde {
   border-color: transparent;
-  background: var(--verde-suave);
-  color: var(--verde);
+  background: var(--gain-subtle);
+  color: var(--gain);
 }
 
 .chip.rojo {
   border-color: transparent;
-  background: var(--rojo-suave);
-  color: var(--rojo);
+  background: var(--loss-subtle);
+  color: var(--loss);
 }
 
 .chip.ambar {
   border-color: transparent;
-  background: var(--ambar-suave);
-  color: var(--ambar);
+  background: var(--warning-subtle);
+  color: var(--warning);
 }
 
 /* ---------- formularios ---------- */
@@ -570,24 +583,24 @@ tr:hover .fila-acciones {
 .campo label {
   font-size: 12.5px;
   font-weight: 600;
-  color: var(--tinta-2);
+  color: var(--text-secondary);
 }
 
 .campo .ayuda {
   font-size: 11.5px;
-  color: var(--tinta-2);
+  color: var(--text-secondary);
   opacity: 0.85;
 }
 
 .campo .error {
   font-size: 11.5px;
-  color: var(--rojo);
+  color: var(--loss);
   font-weight: 500;
 }
 
 .campo input.invalido,
 .campo select.invalido {
-  border-color: var(--rojo);
+  border-color: var(--loss);
 }
 
 .form-rejilla {
@@ -615,8 +628,8 @@ tr:hover .fila-acciones {
 }
 
 .modal {
-  background: var(--superficie);
-  border: 1px solid var(--linea);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
   border-radius: 10px;
   box-shadow: 0 24px 80px rgba(10, 8, 4, 0.35);
   width: min(560px, calc(100vw - 48px));
@@ -631,7 +644,7 @@ tr:hover .fila-acciones {
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px 12px;
-  border-bottom: 3px double var(--linea-fuerte);
+  border-bottom: 3px double var(--border-strong);
 }
 
 .modal-cabecera h2 {
@@ -651,7 +664,7 @@ tr:hover .fila-acciones {
   justify-content: flex-end;
   gap: 8px;
   padding: 14px 20px 16px;
-  border-top: 1px solid var(--linea);
+  border-top: 1px solid var(--border);
 }
 
 @keyframes aparecer {
@@ -686,7 +699,7 @@ tr:hover .fila-acciones {
 
 .vacio p {
   margin: 0;
-  color: var(--tinta-2);
+  color: var(--text-secondary);
   max-width: 380px;
 }
 
@@ -737,14 +750,14 @@ tr:hover .fila-acciones {
 .barra-h {
   height: 8px;
   border-radius: 999px;
-  background: var(--superficie-2);
+  background: var(--surface-2);
   overflow: hidden;
 }
 
 .barra-h > div {
   height: 100%;
   border-radius: 999px;
-  background: var(--acento);
+  background: var(--accent);
   transition: width 400ms cubic-bezier(0.2, 0.8, 0.3, 1);
 }
 
@@ -756,13 +769,13 @@ tr:hover .fila-acciones {
   align-items: center;
   justify-content: center;
   background:
-    radial-gradient(ellipse 90% 70% at 70% -10%, var(--acento-suave), transparent),
-    var(--papel);
+    radial-gradient(ellipse 90% 70% at 70% -10%, var(--accent-subtle), transparent),
+    var(--surface-0);
 }
 
 .onboarding-tarjeta {
-  background: var(--superficie);
-  border: 1px solid var(--linea);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
   border-radius: 12px;
   box-shadow: var(--sombra);
   width: min(460px, calc(100vw - 48px));
@@ -789,12 +802,12 @@ tr:hover .fila-acciones {
   width: 7px;
   height: 7px;
   border-radius: 999px;
-  background: var(--linea);
+  background: var(--border);
   transition: all var(--transicion);
 }
 
 .onboarding-puntos span.activo {
-  background: var(--acento);
+  background: var(--accent);
   width: 20px;
 }
 
@@ -808,7 +821,7 @@ tr:hover .fila-acciones {
 }
 
 .tour-destacado {
-  outline: 2px solid var(--acento);
+  outline: 2px solid var(--accent);
   outline-offset: -2px;
   border-radius: var(--radio);
 }
@@ -821,13 +834,13 @@ tr:hover .fila-acciones {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--linea);
+  background: var(--border);
   border-radius: 999px;
-  border: 2px solid var(--papel);
+  border: 2px solid var(--surface-0);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--tinta-3);
+  background: var(--text-muted);
 }
 
 ::-webkit-scrollbar-track {

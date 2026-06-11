@@ -31,7 +31,7 @@ export function Onboarding() {
 
         {!esUltimo ? (
           <>
-            <span style={{ color: 'var(--acento)', margin: '18px 0 6px' }}>
+            <span style={{ color: 'var(--accent)', margin: '18px 0 6px' }}>
               <Icono nombre={pasos[paso]!.icono} tam={34} />
             </span>
             <h2>{pasos[paso]!.titulo}</h2>

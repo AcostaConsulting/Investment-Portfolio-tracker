@@ -14,7 +14,7 @@ function crearVentana() {
     minWidth: 980,
     minHeight: 640,
     show: false,
-    backgroundColor: '#14120F',
+    backgroundColor: '#0F172A',
     title: 'Tracker de Portafolio',
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.cjs'),

@@ -18,7 +18,7 @@ export function PuertaPremium({ capacidad, children }: { capacidad: Capacidad; c
 
   return (
     <div className="tarjeta vacio">
-      <span style={{ color: 'var(--acento)' }}>
+      <span style={{ color: 'var(--accent)' }}>
         <Icono nombre="candado" tam={28} />
       </span>
       <h3>{t('licencia.desbloquea', { plan: nombrePlan })}</h3>

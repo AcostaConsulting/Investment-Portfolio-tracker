@@ -111,7 +111,7 @@ function Benchmarks() {
           </tbody>
         </table>
       )}
-      {error && <p className="mini" style={{ color: 'var(--rojo)' }}>{error}</p>}
+      {error && <p className="mini" style={{ color: 'var(--loss)' }}>{error}</p>}
       {preciosEnVivo && !fila && !cargando && (
         <button className="btn" style={{ marginTop: 10 }} onClick={() => void cargar(rango)}>
           {t('configuracion.actualizarAhora')}
@@ -215,7 +215,7 @@ function Rebalanceo() {
           {t('comunes.guardar')}
         </button>
         {!sumaOk && suma > 0 && (
-          <span className="mini" style={{ color: 'var(--ambar)', paddingBottom: 8 }}>
+          <span className="mini" style={{ color: 'var(--warning)', paddingBottom: 8 }}>
             {t('analisis.rebalanceoSuma')} ({formatoPct(suma)})
           </span>
         )}

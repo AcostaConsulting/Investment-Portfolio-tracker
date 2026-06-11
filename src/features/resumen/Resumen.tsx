@@ -63,7 +63,7 @@ export function Resumen({ irA }: { irA: (vista: Vista) => void }) {
 
       {(sinPrecio > 0 || sinTc) && (
         <div className="tarjeta" style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '10px 16px' }}>
-          <span style={{ color: 'var(--ambar)' }}>
+          <span style={{ color: 'var(--warning)' }}>
             <Icono nombre="advertencia" />
           </span>
           <span className="mini suave">

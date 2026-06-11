@@ -85,7 +85,7 @@ export function documentoInicial(): DocumentoStore {
     ajustes: {
       monedaBase: 'MXN',
       idioma: 'es',
-      tema: 'sistema',
+      tema: 'oscuro',
       tasaIsrAnual: 1.9,
       diasAlertaVencimiento: 30,
       preciosEnVivo: false,

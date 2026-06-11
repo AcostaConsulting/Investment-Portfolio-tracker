@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApp } from './state/store'
 import { usePortafolio } from './state/selectores'
-import { useTema } from './tema'
+import { temaEfectivo, useTema } from './tema'
 import { cambiarIdioma } from './i18n'
 import { Icono, type NombreIcono } from './ui/Icono'
 import { tieneCapacidad } from './licencias/planes'
@@ -95,6 +95,7 @@ export default function App() {
           </button>
         ))}
         <div className="lateral-pie">
+          <BotonTema />
           <span className={`sello-plan ${plan === 'free' ? '' : 'pago'}`}>
             {t(
               plan === 'free'
@@ -120,6 +121,26 @@ export default function App() {
       {!tourCompletado && <Tour />}
       <SnapshotDiario />
     </div>
+  )
+}
+
+/** Toggle rápido sol/luna; el selector completo (incl. sistema) vive en Configuración. */
+function BotonTema() {
+  const { t } = useTranslation()
+  const actualizarAjustes = useApp((s) => s.actualizarAjustes)
+  // Suscrito al ajuste para re-render; el efectivo se lee del DOM.
+  useApp((s) => s.doc.ajustes.tema)
+  const oscuro = temaEfectivo() === 'oscuro'
+  return (
+    <button
+      className="btn btn-fantasma btn-mini"
+      style={{ alignSelf: 'flex-start' }}
+      onClick={() => actualizarAjustes({ tema: oscuro ? 'claro' : 'oscuro' })}
+      title={t(oscuro ? 'configuracion.temaClaro' : 'configuracion.temaOscuro')}
+    >
+      <Icono nombre={oscuro ? 'sol' : 'luna'} tam={15} />
+      {t(oscuro ? 'configuracion.temaClaro' : 'configuracion.temaOscuro')}
+    </button>
   )
 }
 

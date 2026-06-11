@@ -80,7 +80,7 @@ function ListaMetas() {
                   </div>
                 </div>
                 <div className="barra-h" style={{ height: 10 }}>
-                  <div style={{ width: `${pct}%`, background: alcanzada ? 'var(--verde)' : 'var(--acento)' }} />
+                  <div style={{ width: `${pct}%`, background: alcanzada ? 'var(--gain)' : 'var(--accent)' }} />
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span className="cifra">{formatoMoneda(valor, base)}</span>

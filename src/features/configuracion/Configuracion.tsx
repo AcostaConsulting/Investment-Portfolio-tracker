@@ -248,7 +248,7 @@ export function Configuracion() {
               </button>
               {estadoPrecios === 'ok' && <span className="mini positivo">{t('configuracion.preciosActualizados')}</span>}
               {estadoPrecios && estadoPrecios !== 'ok' && estadoPrecios !== 'cargando' && (
-                <span className="mini" style={{ color: 'var(--rojo)' }}>
+                <span className="mini" style={{ color: 'var(--loss)' }}>
                   {estadoPrecios}
                 </span>
               )}
@@ -362,7 +362,7 @@ function Actualizador() {
       {estado === 'descargando' && <span className="mini suave">{t('configuracion.actualizando')}</span>}
       {estado === 'lista' && <span className="mini positivo">{t('configuracion.actualizacionLista')}</span>}
       {typeof estado === 'object' && 'error' in estado && (
-        <span className="mini" style={{ color: 'var(--rojo)' }}>
+        <span className="mini" style={{ color: 'var(--loss)' }}>
           {estado.error}
         </span>
       )}

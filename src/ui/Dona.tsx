@@ -14,7 +14,7 @@ export function Dona({ segmentos, tam = 168 }: { segmentos: SegmentoDona[]; tam?
 
   return (
     <svg width={tam} height={tam} viewBox="0 0 160 160" role="img">
-      <circle cx="80" cy="80" r={r} fill="none" stroke="var(--superficie-2)" strokeWidth="26" />
+      <circle cx="80" cy="80" r={r} fill="none" stroke="var(--surface-2)" strokeWidth="26" />
       {total > 0 &&
         segmentos
           .filter((s) => s.valor > 0)
