@@ -1,5 +1,8 @@
-import { app, BrowserWindow, session, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, session, shell } from 'electron'
 import path from 'node:path'
+import { cargar, guardar, respaldar } from './almacen'
+import { obtenerJson } from './red'
+import { abrirArchivo, guardarArchivo, type FiltroArchivo } from './dialogo'
 
 const esDev = !!process.env.VITE_DEV_SERVER_URL
 
@@ -39,6 +42,43 @@ function crearVentana() {
   return ventana
 }
 
+function registrarIpc() {
+  ipcMain.handle('almacen:cargar', () => cargar())
+
+  // El respaldo rotativo se hace antes de sobrescribir, mejor-esfuerzo.
+  let ultimoRespaldo = 0
+  ipcMain.handle('almacen:guardar', async (_evento, documento: unknown) => {
+    const ahora = Date.now()
+    if (ahora - ultimoRespaldo > 10 * 60 * 1000) {
+      ultimoRespaldo = ahora
+      await respaldar()
+    }
+    await guardar(documento)
+  })
+
+  ipcMain.handle('red:json', (_evento, url: string) => obtenerJson(url))
+
+  ipcMain.handle(
+    'dialogo:guardar',
+    (evento, opciones: { sugerido: string; filtros: FiltroArchivo[]; contenidoBase64: string }) => {
+      const ventana = BrowserWindow.fromWebContents(evento.sender)
+      if (!ventana) return { guardado: false }
+      return guardarArchivo(ventana, opciones)
+    },
+  )
+
+  ipcMain.handle('dialogo:abrir', (evento, opciones: { filtros: FiltroArchivo[] }) => {
+    const ventana = BrowserWindow.fromWebContents(evento.sender)
+    if (!ventana) return { abierto: false }
+    return abrirArchivo(ventana, opciones)
+  })
+
+  ipcMain.handle('sistema:info', () => ({
+    version: app.getVersion(),
+    plataforma: process.platform,
+  }))
+}
+
 app.whenReady().then(() => {
   // CSP estricta solo en producción (en dev, Vite necesita inline scripts para HMR).
   if (!esDev) {
@@ -54,6 +94,7 @@ app.whenReady().then(() => {
     })
   }
 
+  registrarIpc()
   crearVentana()
 
   app.on('activate', () => {
