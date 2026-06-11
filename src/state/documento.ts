@@ -49,6 +49,12 @@ export interface ObjetivoRebalanceo {
   porClase: Partial<Record<'accion' | 'cripto' | 'renta_fija', number>>
 }
 
+/** Valor total del portafolio al cierre de un día — alimenta los benchmarks. */
+export interface PuntoHistorico {
+  fecha: string
+  valor: number
+}
+
 export interface DocumentoStore {
   version: 1
   activos: Activo[]
@@ -63,6 +69,8 @@ export interface DocumentoStore {
   metas: Meta[]
   alertasPrecio: AlertaPrecio[]
   rebalanceo?: ObjetivoRebalanceo
+  /** Un punto por día con actividad; tope ~3 años. */
+  historico: PuntoHistorico[]
   onboardingCompletado: boolean
   tourCompletado: boolean
 }
@@ -85,6 +93,7 @@ export function documentoInicial(): DocumentoStore {
     },
     metas: [],
     alertasPrecio: [],
+    historico: [],
     onboardingCompletado: false,
     tourCompletado: false,
   }
@@ -109,5 +118,6 @@ export function migrarDocumento(crudo: unknown): DocumentoStore {
     tiposCambio: doc.tiposCambio ?? {},
     metas: doc.metas ?? [],
     alertasPrecio: doc.alertasPrecio ?? [],
+    historico: doc.historico ?? [],
   }
 }

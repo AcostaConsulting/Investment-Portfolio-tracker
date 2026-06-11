@@ -23,6 +23,7 @@ import llavePublicaPem from '../licencias/llave-publica.pem?raw'
 const RETRASO_GUARDADO_MS = 600
 
 let temporizadorGuardado: ReturnType<typeof setTimeout> | undefined
+let cargaEnCurso = false
 
 function persistir(doc: DocumentoStore) {
   clearTimeout(temporizadorGuardado)
@@ -54,6 +55,11 @@ export interface EstadoApp {
   fijarRebalanceo(objetivo: ObjetivoRebalanceo | undefined): void
   completarOnboarding(): void
   completarTour(): void
+  /** Guarda el valor del portafolio del día (un punto por fecha). */
+  registrarSnapshot(valor: number): void
+
+  /** Alta masiva (import de Excel): activos nuevos + operaciones en una sola mutación. */
+  importarLote(activosNuevos: Activo[], operaciones: Operacion[]): void
 
   activarLicencia(cadena: string): Promise<EstadoLicencia>
   quitarLicencia(): void
@@ -67,6 +73,9 @@ export const useApp = create<EstadoApp>((set, get) => ({
   plan: 'free',
 
   async inicializar() {
+    // Idempotente: StrictMode monta los efectos dos veces en desarrollo.
+    if (get().cargado || cargaEnCurso) return
+    cargaEnCurso = true
     const crudo = await window.api?.almacen.cargar()
     const doc = migrarDocumento(crudo ?? null)
     let licenciaEstado: EstadoLicencia | undefined
@@ -166,6 +175,29 @@ export const useApp = create<EstadoApp>((set, get) => ({
 
   completarTour() {
     get().mutarDoc((doc) => ({ ...doc, tourCompletado: true }))
+  },
+
+  registrarSnapshot(valor) {
+    const hoy = hoyIso()
+    const { historico } = get().doc
+    const ultimo = historico[historico.length - 1]
+    // Mismo día con mismo valor: nada que hacer (evita guardados en cascada).
+    if (ultimo?.fecha === hoy && Math.abs(ultimo.valor - valor) < 0.005) return
+    get().mutarDoc((doc) => {
+      const puntos =
+        ultimo?.fecha === hoy
+          ? doc.historico.map((p) => (p.fecha === hoy ? { fecha: hoy, valor } : p))
+          : [...doc.historico, { fecha: hoy, valor }]
+      return { ...doc, historico: puntos.slice(-1100) }
+    })
+  },
+
+  importarLote(activosNuevos, operaciones) {
+    get().mutarDoc((doc) => ({
+      ...doc,
+      activos: [...doc.activos, ...activosNuevos],
+      operaciones: [...doc.operaciones, ...operaciones],
+    }))
   },
 
   async activarLicencia(cadena) {

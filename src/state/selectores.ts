@@ -5,7 +5,7 @@ import { useApp } from './store'
 import { calcularPortafolio, type ResultadoPortafolio } from '../engine/portafolio'
 import { alertasVencimiento, type AlertaVencimiento } from '../engine/rentaFija'
 import type { ContextoValuacion } from '../engine/tipos'
-import { hoyIso } from '../engine/fechas'
+import { hoyIso, sumarDias } from '../engine/fechas'
 
 export function useContextoValuacion(): ContextoValuacion {
   const doc = useApp((s) => s.doc)
@@ -37,4 +37,25 @@ export function useAlertasVencimiento(): AlertaVencimiento[] {
     () => alertasVencimiento(doc.activos, hoyIso(), doc.ajustes.diasAlertaVencimiento),
     [doc.activos, doc.ajustes.diasAlertaVencimiento],
   )
+}
+
+/**
+ * Cambio % del portafolio en los últimos `dias`, usando los snapshots diarios.
+ * undefined si todavía no hay historia suficiente — la UI lo dice tal cual.
+ */
+export function useCambioPortafolio(dias: number): number | undefined {
+  const historico = useApp((s) => s.doc.historico)
+  return useMemo(() => {
+    if (historico.length < 2) return undefined
+    const corte = sumarDias(hoyIso(), -dias)
+    // El punto más reciente cuyo fecha sea ≤ corte; si no existe, no hay historia.
+    let referencia
+    for (const punto of historico) {
+      if (punto.fecha <= corte) referencia = punto
+      else break
+    }
+    if (!referencia || referencia.valor <= 0) return undefined
+    const ultimo = historico[historico.length - 1]!
+    return ((ultimo.valor - referencia.valor) / referencia.valor) * 100
+  }, [historico, dias])
 }

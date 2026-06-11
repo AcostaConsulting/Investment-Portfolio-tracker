@@ -1,0 +1,11 @@
+/** Tipado de llaves: t('nav.resumen') se verifica en compilación. */
+import type { es } from './es'
+
+declare module 'i18next' {
+  interface CustomTypeOptions {
+    defaultNS: 'translation'
+    resources: {
+      translation: typeof es
+    }
+  }
+}
