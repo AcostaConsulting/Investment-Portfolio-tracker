@@ -338,4 +338,6 @@ export const es = {
   },
 } as const
 
-export type Diccionario = typeof es
+/** Estructura del diccionario con valores ensanchados a string (para las traducciones). */
+type Ensanchado<T> = { [K in keyof T]: T[K] extends string ? string : Ensanchado<T[K]> }
+export type Diccionario = Ensanchado<typeof es>
