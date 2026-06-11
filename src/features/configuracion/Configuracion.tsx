@@ -266,6 +266,7 @@ export function Configuracion() {
               <span className="mini suave">{t('configuracion.actualizacionesAyuda')}</span>
             </span>
           </label>
+          {ajustes.buscarActualizaciones && <Actualizador />}
         </div>
       </div>
 
@@ -315,6 +316,56 @@ export function Configuracion() {
         </div>
         <AcercaDe />
       </div>
+    </div>
+  )
+}
+
+function Actualizador() {
+  const { t } = useTranslation()
+  const [estado, setEstado] = useState<
+    '' | 'buscando' | 'ninguna' | 'descargando' | 'lista' | { disponible: string } | { error: string }
+  >('')
+
+  async function buscar() {
+    setEstado('buscando')
+    const r = await window.api?.actualizador.buscar()
+    if (!r || r.estado === 'sin-actualizacion') setEstado('ninguna')
+    else if (r.estado === 'disponible' && r.version) setEstado({ disponible: r.version })
+    else if (r.estado === 'error') setEstado({ error: r.error ?? t('errores.redFallo') })
+  }
+
+  async function descargar() {
+    setEstado('descargando')
+    const r = await window.api?.actualizador.descargar()
+    if (r?.estado === 'lista') {
+      await window.api?.actualizador.instalarAlCerrar()
+      setEstado('lista')
+    } else {
+      setEstado({ error: r?.error ?? t('errores.redFallo') })
+    }
+  }
+
+  return (
+    <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+      <button className="btn" onClick={() => void buscar()} disabled={estado === 'buscando' || estado === 'descargando'}>
+        {t('configuracion.buscarActualizacion')}
+      </button>
+      {estado === 'ninguna' && <span className="mini suave">{t('configuracion.actualizacionNinguna')}</span>}
+      {typeof estado === 'object' && 'disponible' in estado && (
+        <>
+          <span className="chip acento">{t('configuracion.actualizacionDisponible', { version: estado.disponible })}</span>
+          <button className="btn btn-primario btn-mini" onClick={() => void descargar()}>
+            {t('configuracion.actualizacionDescargar')}
+          </button>
+        </>
+      )}
+      {estado === 'descargando' && <span className="mini suave">{t('configuracion.actualizando')}</span>}
+      {estado === 'lista' && <span className="mini positivo">{t('configuracion.actualizacionLista')}</span>}
+      {typeof estado === 'object' && 'error' in estado && (
+        <span className="mini" style={{ color: 'var(--rojo)' }}>
+          {estado.error}
+        </span>
+      )}
     </div>
   )
 }

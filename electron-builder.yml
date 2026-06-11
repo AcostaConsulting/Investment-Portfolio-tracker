@@ -1,0 +1,33 @@
+# Configuración del instalador de Windows y la publicación a GitHub Releases.
+# El dueño solo necesita: npm run dist   (instalador local en release/)
+#                         o subir un tag vX.Y.Z (GitHub Actions publica solo).
+
+appId: mx.acostaconsulting.tracker-portafolio
+productName: Tracker de Portafolio
+copyright: © Acosta Consulting
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - out/**
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: build/icon.ico
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  shortcutName: Tracker de Portafolio
+  artifactName: TrackerPortafolio-Setup-${version}.exe
+
+# Auto-update: electron-updater lee estos datos desde GitHub Releases.
+# Si el repo cambia, actualiza owner/repo aquí.
+publish:
+  provider: github
+  owner: AcostaConsulting
+  repo: Portfolio-Tracker
