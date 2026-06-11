@@ -87,6 +87,38 @@ export interface DetalleRentaFija {
   tasaIsr?: number
 }
 
+/** Sectores fijos para acciones (GICS, claves estables). */
+export const SECTORES_ACCION = [
+  'technology',
+  'healthcare',
+  'financials',
+  'consumer_discretionary',
+  'consumer_staples',
+  'energy',
+  'industrials',
+  'materials',
+  'real_estate',
+  'utilities',
+  'communication_services',
+] as const
+
+/** Sectores fijos para cripto. Se muestran tal cual (jerga universal). */
+export const SECTORES_CRIPTO = [
+  'Layer 1',
+  'Layer 2',
+  'DeFi',
+  'Infrastructure',
+  'Stablecoins',
+  'Gaming & NFT',
+  'Exchange Tokens',
+  'Privacy',
+  'Interoperability',
+  'Other',
+] as const
+
+export const GEOGRAFIAS = ['mexico', 'eua', 'europa', 'asia', 'latam', 'global'] as const
+export type Geografia = (typeof GEOGRAFIAS)[number]
+
 export interface Activo {
   id: string
   /** Ticker o clave corta visible (AAPL, BTC, CETES-28). */
@@ -96,6 +128,13 @@ export interface Activo {
   /** Moneda natural de cotización del activo. */
   moneda: string
   rentaFija?: DetalleRentaFija
+  /** Sector opcional: clave de SECTORES_ACCION o valor de SECTORES_CRIPTO. */
+  sector?: string
+  geografia?: Geografia
+  /** Ids de etiquetas personalizadas (las entidades viven en el documento). */
+  etiquetaIds?: string[]
+  /** Para el análisis de liquidez. Default: líquido. */
+  liquido?: boolean
 }
 
 /** Precio vigente de un activo, capturado manualmente o traído en vivo (opt-in). */

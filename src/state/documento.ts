@@ -23,6 +23,13 @@ export interface Ajustes {
   buscarActualizaciones: boolean
 }
 
+export interface Etiqueta {
+  id: string
+  nombre: string
+  /** Color hex para el badge (de una paleta fija de la UI). */
+  color: string
+}
+
 export interface Meta {
   id: string
   nombre: string
@@ -66,6 +73,7 @@ export interface DocumentoStore {
   ajustes: Ajustes
   /** Cadena de activación pegada por el usuario (se revalida al arrancar). */
   licencia?: string
+  etiquetas: Etiqueta[]
   metas: Meta[]
   alertasPrecio: AlertaPrecio[]
   rebalanceo?: ObjetivoRebalanceo
@@ -91,6 +99,7 @@ export function documentoInicial(): DocumentoStore {
       preciosEnVivo: false,
       buscarActualizaciones: false,
     },
+    etiquetas: [],
     metas: [],
     alertasPrecio: [],
     historico: [],
@@ -116,6 +125,7 @@ export function migrarDocumento(crudo: unknown): DocumentoStore {
     operaciones: doc.operaciones ?? [],
     precios: doc.precios ?? {},
     tiposCambio: doc.tiposCambio ?? {},
+    etiquetas: doc.etiquetas ?? [],
     metas: doc.metas ?? [],
     alertasPrecio: doc.alertasPrecio ?? [],
     historico: doc.historico ?? [],

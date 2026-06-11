@@ -12,6 +12,7 @@ import {
   textoABase64,
 } from '../../servicios/respaldo'
 import { SeccionLicencia } from './SeccionLicencia'
+import { GestionEtiquetas } from './GestionEtiquetas'
 import { hoyIso } from '../../engine/fechas'
 
 export function Configuracion() {
@@ -31,6 +32,7 @@ export function Configuracion() {
   const [mensajeDatos, setMensajeDatos] = useState('')
   const [nuevaMoneda, setNuevaMoneda] = useState('')
   const [nuevoTc, setNuevoTc] = useState('')
+  const [gestionandoEtiquetas, setGestionandoEtiquetas] = useState(false)
 
   const puedePreciosEnVivo = tieneCapacidad(plan, 'preciosEnVivo')
 
@@ -167,6 +169,17 @@ export function Configuracion() {
             />
           </div>
         </div>
+      </div>
+
+      {/* ---------- Clasificación ---------- */}
+      <div className="tarjeta">
+        <div className="etiqueta" style={{ marginBottom: 12 }}>
+          {t('clasificacion.etiquetas')}
+        </div>
+        <button className="btn" onClick={() => setGestionandoEtiquetas(true)}>
+          {t('clasificacion.gestionEtiquetas')}
+        </button>
+        {gestionandoEtiquetas && <GestionEtiquetas alCerrar={() => setGestionandoEtiquetas(false)} />}
       </div>
 
       {/* ---------- Tipos de cambio ---------- */}

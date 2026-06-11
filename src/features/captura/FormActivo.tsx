@@ -2,7 +2,18 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Modal } from '../../ui/Modal'
 import { useApp } from '../../state/store'
-import type { Activo, ClaseActivo, DetalleRentaFija, InstrumentoRentaFija } from '../../engine/tipos'
+import { useUi } from '../../state/ui'
+import { puedeAgregarEtiqueta } from '../../engine/etiquetas'
+import {
+  GEOGRAFIAS,
+  SECTORES_ACCION,
+  SECTORES_CRIPTO,
+  type Activo,
+  type ClaseActivo,
+  type DetalleRentaFija,
+  type Geografia,
+  type InstrumentoRentaFija,
+} from '../../engine/tipos'
 import { esFechaIsoValida, hoyIso } from '../../engine/fechas'
 
 const CLASES: ClaseActivo[] = ['accion', 'cripto', 'renta_fija']
@@ -25,6 +36,9 @@ export function FormActivo({
   const { t } = useTranslation()
   const guardarActivo = useApp((s) => s.guardarActivo)
   const monedaBase = useApp((s) => s.doc.ajustes.monedaBase)
+  const etiquetasDisponibles = useApp((s) => s.doc.etiquetas)
+  const plan = useApp((s) => s.plan)
+  const abrirModalPlanes = useUi((s) => s.abrirModalPlanes)
 
   const [simbolo, setSimbolo] = useState(existente?.simbolo ?? '')
   const [nombre, setNombre] = useState(existente?.nombre ?? '')
@@ -38,6 +52,10 @@ export function FormActivo({
   const [valorNominal, setValorNominal] = useState(rf?.valorNominal ? String(rf.valorNominal) : '')
   const [udiInicial, setUdiInicial] = useState(rf?.udiInicial ? String(rf.udiInicial) : '')
   const [tasaIsr, setTasaIsr] = useState(rf?.tasaIsr !== undefined ? String(rf.tasaIsr) : '')
+  const [sector, setSector] = useState(existente?.sector ?? '')
+  const [geografia, setGeografia] = useState<Geografia | ''>(existente?.geografia ?? '')
+  const [etiquetaIds, setEtiquetaIds] = useState<string[]>(existente?.etiquetaIds ?? [])
+  const [liquido, setLiquido] = useState(existente?.liquido ?? true)
   const [errores, setErrores] = useState<Record<string, string>>({})
 
   const esRF = clase === 'renta_fija'
@@ -82,6 +100,10 @@ export function FormActivo({
       clase,
       moneda: moneda.trim().toUpperCase(),
       ...(rentaFija ? { rentaFija } : {}),
+      ...(sector && !esRF ? { sector } : {}),
+      ...(geografia ? { geografia } : {}),
+      ...(etiquetaIds.length > 0 ? { etiquetaIds } : {}),
+      ...(liquido ? {} : { liquido: false }),
     }
     guardarActivo(activo)
     alGuardar?.(activo)
@@ -146,6 +168,85 @@ export function FormActivo({
             ))}
           </datalist>
           {errores.moneda ? <span className="error">{errores.moneda}</span> : <span className="ayuda">{t('formActivo.monedaAyuda')}</span>}
+        </div>
+
+        {!esRF && (
+          <div className="campo">
+            <label>
+              {t('clasificacion.sector')} <span className="suave">({t('comunes.opcional')})</span>
+            </label>
+            <select value={sector} onChange={(e) => setSector(e.target.value)}>
+              <option value="">{t('clasificacion.sinSector')}</option>
+              {clase === 'accion'
+                ? SECTORES_ACCION.map((s) => (
+                    <option key={s} value={s}>
+                      {t(`clasificacion.sectores.${s}`)}
+                    </option>
+                  ))
+                : SECTORES_CRIPTO.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+            </select>
+          </div>
+        )}
+        <div className="campo">
+          <label>
+            {t('clasificacion.geografia')} <span className="suave">({t('comunes.opcional')})</span>
+          </label>
+          <select value={geografia} onChange={(e) => setGeografia(e.target.value as Geografia | '')}>
+            <option value="">—</option>
+            {GEOGRAFIAS.map((g) => (
+              <option key={g} value={g}>
+                {t(`clasificacion.geografias.${g}`)}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="campo ancho-completo">
+          <label>{t('clasificacion.etiquetas')}</label>
+          {etiquetasDisponibles.length === 0 ? (
+            <span className="ayuda">{t('clasificacion.sinEtiquetasCreadas')}</span>
+          ) : (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {etiquetasDisponibles.map((e) => {
+                const activa = etiquetaIds.includes(e.id)
+                const bloqueada = !activa && !puedeAgregarEtiqueta(plan, etiquetaIds.length)
+                return (
+                  <button
+                    key={e.id}
+                    type="button"
+                    className="chip"
+                    style={{
+                      cursor: 'pointer',
+                      borderColor: activa ? e.color : undefined,
+                      background: activa ? `color-mix(in srgb, ${e.color} 18%, transparent)` : undefined,
+                      color: activa ? e.color : undefined,
+                      opacity: bloqueada ? 0.45 : 1,
+                    }}
+                    onClick={() => {
+                      if (activa) setEtiquetaIds(etiquetaIds.filter((x) => x !== e.id))
+                      else if (bloqueada) abrirModalPlanes()
+                      else setEtiquetaIds([...etiquetaIds, e.id])
+                    }}
+                  >
+                    {e.nombre}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+          {!puedeAgregarEtiqueta(plan, etiquetaIds.length) && etiquetaIds.length > 0 && (
+            <span className="ayuda">{t('clasificacion.limiteEtiquetas')}</span>
+          )}
+        </div>
+        <div className="campo">
+          <label style={{ display: 'flex', gap: 8, alignItems: 'center', cursor: 'pointer' }}>
+            <input type="checkbox" checked={liquido} onChange={(e) => setLiquido(e.target.checked)} />
+            {t('clasificacion.liquido')}
+          </label>
+          <span className="ayuda">{t('clasificacion.liquidoAyuda')}</span>
         </div>
 
         {esRF && (

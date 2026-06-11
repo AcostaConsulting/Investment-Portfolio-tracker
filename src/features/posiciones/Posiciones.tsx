@@ -92,6 +92,24 @@ export function Posiciones() {
                         />
                         <span style={{ fontWeight: 600 }}>{p.activo.simbolo}</span>
                         <span className="mini suave">{p.activo.nombre}</span>
+                        {p.activo.etiquetaIds?.map((id) => {
+                          const e = doc.etiquetas.find((x) => x.id === id)
+                          return e ? (
+                            <span
+                              key={id}
+                              className="chip"
+                              style={{
+                                borderColor: 'transparent',
+                                background: `color-mix(in srgb, ${e.color} 16%, transparent)`,
+                                color: e.color,
+                                fontSize: 10.5,
+                                padding: '1px 7px',
+                              }}
+                            >
+                              {e.nombre}
+                            </span>
+                          ) : null
+                        })}
                         {p.sinPrecio && !esRF && (
                           <span className="chip ambar" title={t('posiciones.sinPrecioAviso')}>
                             !

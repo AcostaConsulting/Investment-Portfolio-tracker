@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { useApp } from './store'
 import { calcularPortafolio, type ResultadoPortafolio } from '../engine/portafolio'
 import { alertasVencimiento, type AlertaVencimiento } from '../engine/rentaFija'
+import { calcularDiversificacion, type VistaDiversificacion } from '../engine/diversificacion'
 import type { ContextoValuacion } from '../engine/tipos'
 import { hoyIso, sumarDias } from '../engine/fechas'
 
@@ -37,6 +38,12 @@ export function useAlertasVencimiento(): AlertaVencimiento[] {
     () => alertasVencimiento(doc.activos, hoyIso(), doc.ajustes.diasAlertaVencimiento),
     [doc.activos, doc.ajustes.diasAlertaVencimiento],
   )
+}
+
+export function useDiversificacion(): VistaDiversificacion {
+  const { posiciones } = usePortafolio()
+  const etiquetas = useApp((s) => s.doc.etiquetas)
+  return useMemo(() => calcularDiversificacion(posiciones, etiquetas), [posiciones, etiquetas])
 }
 
 /**

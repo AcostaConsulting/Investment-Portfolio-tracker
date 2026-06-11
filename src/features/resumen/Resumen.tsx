@@ -1,9 +1,10 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApp } from '../../state/store'
-import { useAlertasVencimiento, usePortafolio } from '../../state/selectores'
+import { useAlertasVencimiento, useDiversificacion, usePortafolio } from '../../state/selectores'
 import { Cifra, Porcentaje } from '../../ui/Cifra'
-import { Dona } from '../../ui/Dona'
 import { Icono } from '../../ui/Icono'
+import { DIMENSIONES, GraficaDiversificacion, type Dimension } from '../../ui/GraficaDiversificacion'
 import { formatoMoneda, formatoPct } from '../../ui/formato'
 import type { Vista } from '../../App'
 import type { ClaseActivo } from '../../engine/tipos'
@@ -18,8 +19,10 @@ export function Resumen({ irA }: { irA: (vista: Vista) => void }) {
   const { t } = useTranslation()
   const doc = useApp((s) => s.doc)
   const { posiciones, totales, advertencias } = usePortafolio()
+  const diversificacion = useDiversificacion()
   const vencimientos = useAlertasVencimiento()
   const base = totales.monedaBase
+  const [dimension, setDimension] = useState<Dimension>('clase')
 
   if (doc.operaciones.length === 0) {
     return (
@@ -45,15 +48,6 @@ export function Resumen({ irA }: { irA: (vista: Vista) => void }) {
   const topActivos = [...abiertas]
     .sort((a, b) => (b.valorBase ?? 0) - (a.valorBase ?? 0))
     .slice(0, 8)
-
-  const segmentos = (Object.entries(totales.porClase) as [ClaseActivo, { valor: number; pct: number }][]).map(
-    ([clase, datos]) => ({
-      etiqueta: t(`clases.${clase}`),
-      valor: datos.valor,
-      color: COLOR_CLASE[clase],
-      pct: datos.pct,
-    }),
-  )
 
   return (
     <div className="vista">
@@ -124,21 +118,29 @@ export function Resumen({ irA }: { irA: (vista: Vista) => void }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 12 }}>
         <div className="tarjeta">
-          <div className="etiqueta" style={{ marginBottom: 12 }}>
-            {t('resumen.distribucion')} · {t('resumen.porClase')}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 12, flexWrap: 'wrap' }}>
+            <span className="etiqueta" style={{ marginRight: 'auto' }}>
+              {t('resumen.distribucion')}
+            </span>
+            {DIMENSIONES.map((d) => (
+              <button
+                key={d}
+                className={`btn btn-mini ${dimension === d ? 'btn-primario' : 'btn-fantasma'}`}
+                onClick={() => setDimension(d)}
+              >
+                {t(
+                  d === 'clase'
+                    ? 'comunes.clase'
+                    : d === 'sector'
+                      ? 'clasificacion.sector'
+                      : d === 'geografia'
+                        ? 'clasificacion.geografia'
+                        : 'clasificacion.etiquetas',
+                )}
+              </button>
+            ))}
           </div>
-          <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
-            <Dona segmentos={segmentos} tam={150} />
-            <div className="dona-leyenda">
-              {segmentos.map((s) => (
-                <div key={s.etiqueta} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span className="punto" style={{ background: s.color }} />
-                  <span className="mini">{s.etiqueta}</span>
-                  <span className="mini cifra suave">{formatoPct(s.pct)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          <GraficaDiversificacion vista={diversificacion} dimension={dimension} tam={150} />
         </div>
 
         <div className="tarjeta">

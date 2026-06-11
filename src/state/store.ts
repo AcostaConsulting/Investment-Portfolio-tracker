@@ -12,6 +12,7 @@ import {
   type Ajustes,
   type AlertaPrecio,
   type DocumentoStore,
+  type Etiqueta,
   type Meta,
   type ObjetivoRebalanceo,
 } from './documento'
@@ -48,6 +49,9 @@ export interface EstadoApp {
   fijarPrecio(activoId: string, precio: PrecioActual): void
   fijarTipoCambio(moneda: string, valor: number): void
   actualizarAjustes(parcial: Partial<Ajustes>): void
+  guardarEtiqueta(etiqueta: Etiqueta): void
+  /** Elimina la etiqueta y la desprende de todos los activos. */
+  eliminarEtiqueta(id: string): void
   guardarMeta(meta: Meta): void
   eliminarMeta(id: string): void
   guardarAlertaPrecio(alerta: AlertaPrecio): void
@@ -137,6 +141,25 @@ export const useApp = create<EstadoApp>((set, get) => ({
 
   actualizarAjustes(parcial) {
     get().mutarDoc((doc) => ({ ...doc, ajustes: { ...doc.ajustes, ...parcial } }))
+  },
+
+  guardarEtiqueta(etiqueta) {
+    get().mutarDoc((doc) => ({
+      ...doc,
+      etiquetas: doc.etiquetas.some((e) => e.id === etiqueta.id)
+        ? doc.etiquetas.map((e) => (e.id === etiqueta.id ? etiqueta : e))
+        : [...doc.etiquetas, etiqueta],
+    }))
+  },
+
+  eliminarEtiqueta(id) {
+    get().mutarDoc((doc) => ({
+      ...doc,
+      etiquetas: doc.etiquetas.filter((e) => e.id !== id),
+      activos: doc.activos.map((a) =>
+        a.etiquetaIds?.includes(id) ? { ...a, etiquetaIds: a.etiquetaIds.filter((x) => x !== id) } : a,
+      ),
+    }))
   },
 
   guardarMeta(meta) {
