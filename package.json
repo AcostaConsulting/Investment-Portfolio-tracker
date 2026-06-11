@@ -1,0 +1,45 @@
+{
+  "name": "tracker-portafolio",
+  "productName": "Tracker de Portafolio",
+  "version": "0.1.0",
+  "description": "Tracker de portafolio de inversiones 100% local, con renta fija mexicana.",
+  "author": "Acosta Consulting",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "out/main/index.cjs",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p electron/tsconfig.json",
+    "build": "npm run typecheck && npm run test && vite build && node scripts/build-electron.mjs",
+    "dist": "npm run build && electron-builder --win --publish never",
+    "release": "npm run build && electron-builder --win --publish always",
+    "licencia:llaves": "node scripts/generar-llaves.mjs",
+    "licencia:nueva": "node scripts/generar-licencia.mjs"
+  },
+  "dependencies": {
+    "@fontsource-variable/fraunces": "^5.2.9",
+    "@fontsource-variable/instrument-sans": "^5.2.8",
+    "@fontsource/ibm-plex-mono": "^5.2.7",
+    "electron-updater": "^6.8.9",
+    "exceljs": "^4.4.0",
+    "i18next": "^26.3.1",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-i18next": "^17.0.8",
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.3",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.2",
+    "electron": "^42.4.0",
+    "electron-builder": "^26.15.2",
+    "esbuild": "^0.28.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.16",
+    "vitest": "^4.1.8"
+  }
+}

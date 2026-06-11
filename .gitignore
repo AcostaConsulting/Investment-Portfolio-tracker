@@ -1,0 +1,12 @@
+node_modules/
+out/
+dist/
+release/
+*.local
+.env
+.DS_Store
+
+# Llaves privadas de licencias — NUNCA subir al repo
+secrets/
+*.pem
+!src/shared/llave-publica.pem
