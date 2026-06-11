@@ -7,12 +7,15 @@ export function Modal({
   alCerrar,
   children,
   pie,
+  ancho,
 }: {
   titulo: string
   abierto: boolean
   alCerrar: () => void
   children: ReactNode
   pie?: ReactNode
+  /** Ancho máximo en px (default 560). */
+  ancho?: number
 }) {
   useEffect(() => {
     if (!abierto) return
@@ -27,7 +30,12 @@ export function Modal({
 
   return (
     <div className="modal-fondo" onMouseDown={(e) => e.target === e.currentTarget && alCerrar()}>
-      <div className="modal" role="dialog" aria-modal>
+      <div
+        className="modal"
+        role="dialog"
+        aria-modal
+        style={ancho ? { width: `min(${ancho}px, calc(100vw - 48px))` } : undefined}
+      >
         <div className="modal-cabecera">
           <h2>{titulo}</h2>
           <button className="btn-icono" onClick={alCerrar} aria-label="✕">

@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApp } from '../../state/store'
+import { useUi } from '../../state/ui'
 import { formatoFecha } from '../../ui/formato'
 import { PRECIOS_USD } from '../../licencias/planes'
-
-const URL_GUMROAD = 'https://gumroad.com'
 
 export function SeccionLicencia() {
   const { t } = useTranslation()
@@ -12,6 +11,7 @@ export function SeccionLicencia() {
   const estado = useApp((s) => s.licenciaEstado)
   const activarLicencia = useApp((s) => s.activarLicencia)
   const quitarLicencia = useApp((s) => s.quitarLicencia)
+  const abrirModalPlanes = useUi((s) => s.abrirModalPlanes)
   const [cadena, setCadena] = useState('')
   const [mensaje, setMensaje] = useState<'' | 'ok' | 'vencida' | 'invalida'>('')
 
@@ -80,9 +80,9 @@ export function SeccionLicencia() {
               <button className="btn btn-primario" onClick={() => void activar()} disabled={!cadena.trim()}>
                 {t('licencia.activar')}
               </button>
-              <a className="btn" href={URL_GUMROAD} target="_blank" rel="noreferrer">
-                {t('licencia.comprar')}
-              </a>
+              <button className="btn" onClick={abrirModalPlanes}>
+                {t('planes.verPlanes')}
+              </button>
             </div>
           </div>
           {mensaje === 'invalida' && (

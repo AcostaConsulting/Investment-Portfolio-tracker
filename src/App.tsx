@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApp } from './state/store'
+import { useUi } from './state/ui'
 import { usePortafolio } from './state/selectores'
 import { temaEfectivo, useTema } from './tema'
+import { ModalPlanes } from './ui/ModalPlanes'
 import { cambiarIdioma } from './i18n'
 import { Icono, type NombreIcono } from './ui/Icono'
 import { tieneCapacidad } from './licencias/planes'
@@ -53,6 +55,7 @@ export default function App() {
   const onboardingCompletado = useApp((s) => s.doc.onboardingCompletado)
   const tourCompletado = useApp((s) => s.doc.tourCompletado)
   const plan = useApp((s) => s.plan)
+  const abrirModalPlanes = useUi((s) => s.abrirModalPlanes)
   const [vista, setVista] = useState<Vista>('resumen')
 
   useEffect(() => {
@@ -96,7 +99,11 @@ export default function App() {
         ))}
         <div className="lateral-pie">
           <BotonTema />
-          <span className={`sello-plan ${plan === 'free' ? '' : 'pago'}`}>
+          <button
+            className={`sello-plan ${plan === 'free' ? '' : 'pago'}`}
+            onClick={abrirModalPlanes}
+            title={t('planes.titulo')}
+          >
             {t(
               plan === 'free'
                 ? 'licencia.planFree'
@@ -106,7 +113,7 @@ export default function App() {
                     ? 'licencia.planPremium'
                     : 'licencia.planLifetime',
             )}
-          </span>
+          </button>
         </div>
       </aside>
       <main className="contenido">
@@ -120,6 +127,7 @@ export default function App() {
       </main>
       {!tourCompletado && <Tour />}
       <SnapshotDiario />
+      <ModalPlanes />
     </div>
   )
 }

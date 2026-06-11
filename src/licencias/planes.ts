@@ -14,9 +14,11 @@ export type Capacidad =
   | 'preciosEnVivo'
   | 'alertasPrecio'
   | 'analisisComisiones'
+  | 'liquidez'
   | 'rebalanceo'
   | 'benchmarks'
   | 'metas'
+  | 'etiquetasIlimitadas'
 
 const NIVEL_PLAN: Record<Plan, number> = {
   free: 0,
@@ -25,15 +27,18 @@ const NIVEL_PLAN: Record<Plan, number> = {
   lifetime: 2,
 }
 
+// Sesión 2: alertas, comisiones, liquidez y benchmarks bajaron a Pro.
 const NIVEL_REQUERIDO: Record<Capacidad, number> = {
   importarExcel: 0,
   exportarExcel: 1,
   preciosEnVivo: 1,
-  alertasPrecio: 2,
-  analisisComisiones: 2,
+  alertasPrecio: 1,
+  analisisComisiones: 1,
+  liquidez: 1,
+  benchmarks: 1,
   rebalanceo: 2,
-  benchmarks: 2,
   metas: 2,
+  etiquetasIlimitadas: 2,
 }
 
 export function tieneCapacidad(plan: Plan, capacidad: Capacidad): boolean {

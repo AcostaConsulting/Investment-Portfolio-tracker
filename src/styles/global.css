@@ -761,6 +761,66 @@ tr:hover .fila-acciones {
   transition: width 400ms cubic-bezier(0.2, 0.8, 0.3, 1);
 }
 
+/* ---------- modal de planes ---------- */
+
+.planes-rejilla {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.plan-col {
+  border: 1px solid var(--border);
+  border-radius: var(--radio);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.plan-col.actual {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+  background: var(--accent-subtle);
+}
+
+.plan-col.menor {
+  opacity: 0.5;
+}
+
+.plan-nombre {
+  font-family: var(--f-display);
+  font-weight: 620;
+  font-size: 16px;
+}
+
+.plan-precio .cifra {
+  font-size: 20px;
+}
+
+.planes-tabla td.col-actual {
+  background: var(--accent-subtle);
+}
+
+.puerta-premium {
+  width: 100%;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.sello-plan {
+  background: none;
+  cursor: pointer;
+  transition: border-color var(--transicion);
+}
+
+.sello-plan:hover {
+  border-color: var(--accent);
+}
+
 /* ---------- onboarding y tour ---------- */
 
 .onboarding {

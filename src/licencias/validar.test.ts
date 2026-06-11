@@ -85,16 +85,28 @@ describe('gating por plan', () => {
     expect(tieneCapacidad('free', 'preciosEnVivo')).toBe(false)
   })
 
-  it('Pro desbloquea export y precios en vivo, pero no Premium', () => {
+  it('Pro desbloquea el análisis básico pero no lo Premium', () => {
     expect(tieneCapacidad('pro', 'exportarExcel')).toBe(true)
     expect(tieneCapacidad('pro', 'preciosEnVivo')).toBe(true)
-    expect(tieneCapacidad('pro', 'benchmarks')).toBe(false)
+    expect(tieneCapacidad('pro', 'alertasPrecio')).toBe(true)
+    expect(tieneCapacidad('pro', 'benchmarks')).toBe(true)
+    expect(tieneCapacidad('pro', 'liquidez')).toBe(true)
     expect(tieneCapacidad('pro', 'metas')).toBe(false)
+    expect(tieneCapacidad('pro', 'rebalanceo')).toBe(false)
+    expect(tieneCapacidad('pro', 'etiquetasIlimitadas')).toBe(false)
   })
 
   it('Premium y Lifetime tienen todo', () => {
     for (const plan of ['premium', 'lifetime'] as const) {
-      for (const cap of ['alertasPrecio', 'analisisComisiones', 'rebalanceo', 'benchmarks', 'metas'] as const) {
+      for (const cap of [
+        'alertasPrecio',
+        'analisisComisiones',
+        'liquidez',
+        'rebalanceo',
+        'benchmarks',
+        'metas',
+        'etiquetasIlimitadas',
+      ] as const) {
         expect(tieneCapacidad(plan, cap)).toBe(true)
       }
     }
