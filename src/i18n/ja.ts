@@ -132,6 +132,9 @@ export const ja: Diccionario = {
     fechaInvalida: '日付が無効です（YYYY-MM-DD）',
     sinActivos: 'まず資産を作成してください',
     cantidadAjusteAyuda: '正の値は数量を追加、負の値は損益に影響せず数量を減らします。',
+    usarTcFecha: 'この日付の為替レートを使う',
+    tcCargando: '為替レートを取得中…',
+    tcError: 'レートを取得できませんでした。手動で入力してください。',
   },
   formActivo: {
     nuevo: '新しい資産',

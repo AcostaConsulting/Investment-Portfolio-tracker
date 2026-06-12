@@ -132,6 +132,9 @@ export const fr: Diccionario = {
     fechaInvalida: 'Date invalide (AAAA-MM-JJ)',
     sinActivos: 'Créez d’abord un actif',
     cantidadAjusteAyuda: 'Positif ajoute des unités ; négatif en retire sans affecter le P&L.',
+    usarTcFecha: 'Utiliser le taux de cette date',
+    tcCargando: 'Récupération du taux de change…',
+    tcError: 'Taux introuvable ; saisissez-le manuellement.',
   },
   formActivo: {
     nuevo: 'Nouvel actif',

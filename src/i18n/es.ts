@@ -135,6 +135,9 @@ export const es = {
     fechaInvalida: 'Fecha inválida (AAAA-MM-DD)',
     sinActivos: 'Primero crea un activo',
     cantidadAjusteAyuda: 'Positiva agrega unidades; negativa retira sin afectar el P&L.',
+    usarTcFecha: 'Usar TC de esta fecha',
+    tcCargando: 'Buscando el tipo de cambio…',
+    tcError: 'No se pudo obtener el TC; ingrésalo manualmente.',
   },
   formActivo: {
     nuevo: 'Nuevo activo',

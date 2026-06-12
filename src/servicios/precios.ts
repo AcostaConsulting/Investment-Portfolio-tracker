@@ -81,6 +81,22 @@ async function tipoCambio(de: string, a: string): Promise<number | undefined> {
   return datos.rates?.[a]
 }
 
+/**
+ * Tipo de cambio HISTÓRICO de Frankfurter para una fecha dada (B8 del spec S2).
+ * Frankfurter regresa el dato del día hábil más cercano anterior.
+ */
+export async function tipoCambioHistorico(
+  fechaIso: string,
+  de: string,
+  a: string,
+): Promise<number | undefined> {
+  if (de === a) return 1
+  const datos = (await json(`https://api.frankfurter.dev/v1/${fechaIso}?base=${de}&symbols=${a}`)) as {
+    rates?: Record<string, number>
+  }
+  return datos.rates?.[a]
+}
+
 /** Actualiza precios de todos los activos y los tipos de cambio en uso. */
 export async function actualizarTodo(doc: DocumentoStore): Promise<ResultadoActualizacion> {
   const errores: string[] = []

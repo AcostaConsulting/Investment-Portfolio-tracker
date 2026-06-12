@@ -132,6 +132,9 @@ export const zh: Diccionario = {
     fechaInvalida: '日期无效（YYYY-MM-DD）',
     sinActivos: '请先创建资产',
     cantidadAjusteAyuda: '正数增加数量；负数减少数量且不影响盈亏。',
+    usarTcFecha: '使用该日期的汇率',
+    tcCargando: '正在获取汇率…',
+    tcError: '无法获取汇率，请手动输入。',
   },
   formActivo: {
     nuevo: '新资产',

@@ -132,6 +132,9 @@ export const en: Diccionario = {
     fechaInvalida: 'Invalid date (YYYY-MM-DD)',
     sinActivos: 'Create an asset first',
     cantidadAjusteAyuda: 'Positive adds units; negative removes them without affecting P&L.',
+    usarTcFecha: 'Use this date’s FX rate',
+    tcCargando: 'Fetching the exchange rate…',
+    tcError: 'Could not fetch the rate; enter it manually.',
   },
   formActivo: {
     nuevo: 'New asset',

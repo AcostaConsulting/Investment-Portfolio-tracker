@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Modal } from '../../ui/Modal'
 import { FormActivo } from './FormActivo'
 import { useApp } from '../../state/store'
+import { tipoCambioHistorico } from '../../servicios/precios'
 import type { Activo, Operacion, TipoOperacion } from '../../engine/tipos'
 import { OPERACIONES_EFECTIVO } from '../../engine/tipos'
 import { esFechaIsoValida, hoyIso } from '../../engine/fechas'
@@ -45,6 +46,10 @@ export function FormOperacion({
   const [nota, setNota] = useState(existente?.nota ?? '')
   const [errores, setErrores] = useState<Record<string, string>>({})
   const [creandoActivo, setCreandoActivo] = useState(false)
+  // Al editar una operación se respeta el TC capturado; en altas nuevas
+  // se sugiere el TC histórico de la fecha (desactivable).
+  const [usarTcFecha, setUsarTcFecha] = useState(!existente)
+  const [tcEstado, setTcEstado] = useState<'' | 'cargando' | 'error'>('')
 
   const activo = useMemo(() => activos.find((a) => a.id === activoId), [activos, activoId])
 
@@ -57,6 +62,29 @@ export function FormOperacion({
   useEffect(() => {
     if (esBase) setTipoCambio('1')
   }, [esBase])
+
+  // TC histórico de Frankfurter para la fecha de la operación.
+  useEffect(() => {
+    if (esBase || !usarTcFecha || !esFechaIsoValida(fecha) || moneda.trim().length < 3) return
+    let cancelado = false
+    setTcEstado('cargando')
+    tipoCambioHistorico(fecha, moneda.trim().toUpperCase(), monedaBase)
+      .then((tc) => {
+        if (cancelado) return
+        if (tc !== undefined) {
+          setTipoCambio(String(tc))
+          setTcEstado('')
+        } else {
+          setTcEstado('error')
+        }
+      })
+      .catch(() => {
+        if (!cancelado) setTcEstado('error')
+      })
+    return () => {
+      cancelado = true
+    }
+  }, [esBase, usarTcFecha, fecha, moneda, monedaBase])
 
   const esEfectivo = OPERACIONES_EFECTIVO.has(tipo)
   const esAjuste = tipo === 'ajuste'
@@ -198,15 +226,35 @@ export function FormOperacion({
           {!esBase && (
             <div className="campo">
               <label>{t('formOperacion.tipoCambio', { base: monedaBase })}</label>
+              <label className="mini" style={{ display: 'flex', gap: 7, alignItems: 'center', cursor: 'pointer', fontWeight: 400 }}>
+                <input
+                  type="checkbox"
+                  style={{ width: 13, height: 13 }}
+                  checked={usarTcFecha}
+                  onChange={(e) => {
+                    setUsarTcFecha(e.target.checked)
+                    if (!e.target.checked) setTcEstado('')
+                  }}
+                />
+                {t('formOperacion.usarTcFecha')}
+              </label>
               <input
                 className={errores.tipoCambio ? 'invalido' : ''}
                 type="number"
                 step="any"
                 value={tipoCambio}
-                onChange={(e) => setTipoCambio(e.target.value)}
+                onChange={(e) => {
+                  setTipoCambio(e.target.value)
+                  setUsarTcFecha(false)
+                }}
+                placeholder={tcEstado === 'cargando' ? '…' : undefined}
               />
               {errores.tipoCambio ? (
                 <span className="error">{errores.tipoCambio}</span>
+              ) : tcEstado === 'error' ? (
+                <span className="error">{t('formOperacion.tcError')}</span>
+              ) : tcEstado === 'cargando' ? (
+                <span className="ayuda">{t('formOperacion.tcCargando')}</span>
               ) : (
                 <span className="ayuda">{t('formOperacion.tipoCambioAyuda', { moneda: moneda || '?', base: monedaBase })}</span>
               )}
