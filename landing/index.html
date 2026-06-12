@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tracker de Portafolio — tus inversiones, en tu equipo</title>
+<meta name="description" content="App de escritorio para Windows. Acciones, cripto y renta fija mexicana (CETES, UDIBONOS, SOFIPOs). 100% local: sin cuenta, sin nube, sin telemetría." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* Libro de Acero — la misma firma de la app: regla doble contable,
+     cifras en mono tabular, serif editorial, slate + índigo. */
+  :root {
+    --s0: #0f172a; --s1: #1e293b; --s2: #334155;
+    --tx: #f1f5f9; --tx2: #94a3b8; --tx3: #64748b;
+    --bd: #2c3a4f; --ac: #818cf8; --ac2: #6366f1; --acs: rgba(99,102,241,.14);
+    --gain: #34d399;
+    --serif: 'Fraunces', Georgia, serif;
+    --sans: 'Instrument Sans', system-ui, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--s0); color: var(--tx); font: 16px/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
+  .lienzo { max-width: 1060px; margin: 0 auto; padding: 0 24px; }
+  .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .regla-doble { border: 0; border-top: 1px solid var(--tx); border-bottom: 3px double var(--tx); padding-top: 2px; opacity: .7; margin: 0; }
+  .etiqueta { font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ac); }
+  h1, h2 { font-family: var(--serif); font-weight: 560; letter-spacing: -0.02em; margin: 0; }
+  a.btn, button.btn { display: inline-block; background: var(--ac2); color: #fff; text-decoration: none; font-weight: 600; padding: 11px 22px; border-radius: 7px; border: none; cursor: pointer; transition: filter .15s; }
+  a.btn:hover { filter: brightness(1.12); }
+  a.btn.sec { background: transparent; border: 1px solid var(--bd); color: var(--tx); }
+
+  /* hero */
+  header { padding: 26px 0 0; display: flex; align-items: center; gap: 14px; }
+  .marca { font-family: var(--serif); font-size: 20px; }
+  .marca em { color: var(--ac); }
+  .hero { padding: 88px 0 70px; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; inset: -40% -20% auto; height: 130%; background: radial-gradient(ellipse 60% 50% at 70% 20%, var(--acs), transparent); pointer-events: none; }
+  .hero h1 { font-size: clamp(38px, 6vw, 64px); line-height: 1.04; max-width: 17ch; font-variation-settings: 'opsz' 80; }
+  .hero h1 em { font-style: italic; color: var(--ac); }
+  .hero p.tesis { font-size: 19px; color: var(--tx2); max-width: 52ch; margin: 22px 0 30px; }
+  .hero .acciones { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+
+  /* libro mayor decorativo */
+  .libro { margin: 64px 0 0; background: var(--s1); border: 1px solid var(--bd); border-radius: 10px; padding: 22px 26px; box-shadow: 0 24px 80px rgba(0,0,0,.35); }
+  .libro table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  .libro th { text-align: left; font-size: 11px; letter-spacing: .09em; text-transform: uppercase; color: var(--tx2); padding: 6px 10px; border-bottom: 3px double var(--tx); }
+  .libro td { padding: 9px 10px; border-bottom: 1px solid var(--bd); }
+  .libro td.n { text-align: right; font-family: var(--mono); }
+  .libro tr:last-child td { border-bottom: none; }
+  .v { color: var(--gain); }
+
+  section { padding: 70px 0; }
+  section h2 { font-size: 34px; margin-bottom: 8px; }
+  .sub { color: var(--tx2); margin: 0 0 36px; max-width: 60ch; }
+
+  /* features */
+  .tres { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .tres .caja { background: var(--s1); border: 1px solid var(--bd); border-radius: 10px; padding: 22px; }
+  .tres h3 { margin: 0 0 8px; font-size: 17px; }
+  .tres p { margin: 0; color: var(--tx2); font-size: 14.5px; }
+
+  /* planes */
+  .planes { display: grid; grid-template-columns: repeat(auto-fit, minmax(225px, 1fr)); gap: 14px; }
+  .plan { background: var(--s1); border: 1px solid var(--bd); border-radius: 10px; padding: 22px; display: flex; flex-direction: column; gap: 12px; }
+  .plan.destacado { border-color: var(--ac); box-shadow: 0 0 0 1px var(--ac); position: relative; }
+  .plan.destacado::after { content: 'Recomendado'; position: absolute; top: -11px; right: 14px; background: var(--ac2); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 999px; }
+  .plan h3 { font-family: var(--serif); margin: 0; font-size: 19px; }
+  .plan .precio { font-family: var(--mono); font-size: 26px; }
+  .plan .precio small { font-size: 13px; color: var(--tx2); }
+  .plan .mxn { color: var(--tx2); font-size: 13px; margin-top: -8px; }
+  .plan ul { margin: 0; padding: 0; list-style: none; font-size: 13.5px; color: var(--tx2); display: flex; flex-direction: column; gap: 7px; flex: 1; }
+  .plan li::before { content: '✓  '; color: var(--gain); font-family: var(--mono); }
+  .plan li.no { opacity: .45; }
+  .plan li.no::before { content: '—  '; color: var(--tx3); }
+
+  /* descarga */
+  .descarga { background: var(--s1); border: 1px solid var(--bd); border-radius: 10px; padding: 30px; display: flex; gap: 22px; align-items: center; flex-wrap: wrap; }
+  .sha { font-family: var(--mono); font-size: 12px; color: var(--tx3); word-break: break-all; }
+
+  /* faq */
+  details { border-bottom: 1px solid var(--bd); }
+  details summary { cursor: pointer; padding: 16px 4px; font-weight: 600; list-style: none; }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::before { content: '+'; font-family: var(--mono); color: var(--ac); display: inline-block; width: 24px; }
+  details[open] summary::before { content: '−'; }
+  details p { margin: 0 0 18px 24px; color: var(--tx2); font-size: 15px; max-width: 65ch; }
+
+  footer { border-top: 1px solid var(--bd); padding: 30px 0 50px; color: var(--tx3); font-size: 13.5px; display: flex; gap: 18px; flex-wrap: wrap; }
+  footer a { color: var(--tx2); }
+</style>
+</head>
+<body>
+  <div class="lienzo">
+    <header>
+      <span class="marca">Tracker de <em>Portafolio</em></span>
+    </header>
+
+    <!-- ========== HERO: la tesis ========== -->
+    <div class="hero">
+      <span class="etiqueta">App de escritorio para Windows · 100% local</span>
+      <h1 style="margin-top:14px">Tu portafolio no necesita <em>la nube</em>.</h1>
+      <p class="tesis">
+        Captura tus operaciones — acciones, cripto y renta fija mexicana — y deja que la app
+        calcule todo: costo promedio, P&amp;L, devengo diario de tus CETES e ISR estimado.
+        Sin cuenta. Sin suscripción forzosa. Tus datos jamás salen de tu equipo.
+      </p>
+      <div class="acciones">
+        <a class="btn" href="#descarga">Descargar para Windows</a>
+        <a class="btn sec" href="#planes">Ver planes</a>
+      </div>
+
+      <!-- El libro mayor: la firma visual de la casa -->
+      <div class="libro" aria-hidden="true">
+        <table>
+          <thead><tr><th>Posición</th><th style="text-align:right">Valor hoy</th><th style="text-align:right">P&amp;L</th><th style="text-align:right">Rend.</th></tr></thead>
+          <tbody>
+            <tr><td>CETES-182 · 9.80%</td><td class="n">$51,032.88</td><td class="n v">+$1,032.88</td><td class="n v">+2.07%</td></tr>
+            <tr><td>AAPL · Apple Inc.</td><td class="n">$58,548.48</td><td class="n v">+$8,033.23</td><td class="n v">+15.90%</td></tr>
+            <tr><td>BTC · Bitcoin</td><td class="n">$152,608.96</td><td class="n v">+$76,294.21</td><td class="n v">+99.98%</td></tr>
+          </tbody>
+        </table>
+        <hr class="regla-doble" style="margin-top:10px" />
+      </div>
+    </div>
+
+    <!-- ========== POR QUÉ ========== -->
+    <section>
+      <span class="etiqueta">Por qué existe</span>
+      <h2>Hecho para el inversionista mexicano</h2>
+      <p class="sub">Las apps gringas no saben qué es un CETES. Las mexicanas quieren tus datos en su servidor. Esta no es ninguna de las dos.</p>
+      <div class="tres">
+        <div class="caja">
+          <h3>Renta fija mexicana de verdad</h3>
+          <p>CETES, Bonos M, UDIBONOS, pagarés, SOFIPOs y cuentas tipo Nu. Devengo diario con las convenciones reales del mercado (base 360, cupones de 182 días, ajuste UDI) y retención ISR estimada.</p>
+        </div>
+        <div class="caja">
+          <h3>Multimoneda sin trampas</h3>
+          <p>Cada operación guarda su tipo de cambio histórico. Tus acciones en dólares y tu portafolio en pesos — o al revés — sin que los números mientan.</p>
+        </div>
+        <div class="caja">
+          <h3>Local primero, local siempre</h3>
+          <p>Sin cuenta, sin nube, sin telemetría. La app solo toca internet si tú activas precios en vivo. Respaldos a archivo con cifrado por PIN.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== PLANES ========== -->
+    <section id="planes">
+      <span class="etiqueta">Planes</span>
+      <h2>Empieza gratis. Crece si te sirve.</h2>
+      <p class="sub">Pagos únicos vía Gumroad (Premium es mensual). La licencia se activa offline: pegas tu código y listo.</p>
+      <div class="planes">
+        <div class="plan">
+          <h3>Free</h3>
+          <div class="precio">$0</div>
+          <div class="mxn">para siempre</div>
+          <ul>
+            <li>Activos y operaciones ilimitadas</li>
+            <li>Renta fija mexicana completa</li>
+            <li>Importar desde Excel</li>
+            <li>1 etiqueta por activo</li>
+            <li class="no">Exportar a Excel</li>
+            <li class="no">Precios en vivo y alertas</li>
+          </ul>
+        </div>
+        <div class="plan">
+          <h3>Pro</h3>
+          <div class="precio">$24.99 <small>USD · pago único</small></div>
+          <div class="mxn">≈ $462 MXN</div>
+          <ul>
+            <li>Todo lo de Free</li>
+            <li>Exportar a Excel con formato</li>
+            <li>Precios en vivo (CoinGecko / Yahoo)</li>
+            <li>Alertas de precio</li>
+            <li>Comisiones, liquidez y benchmarks</li>
+            <li>10% desc. en consultoría fiscal</li>
+          </ul>
+          <a class="btn" href="https://acostafconsulting.gumroad.com/l/portfoliotrackerpro">Comprar Pro</a>
+        </div>
+        <div class="plan">
+          <h3>Premium</h3>
+          <div class="precio">$6.99 <small>USD/mes</small></div>
+          <div class="mxn">≈ $129 MXN/mes</div>
+          <ul>
+            <li>Todo lo de Pro</li>
+            <li>Metas de portafolio</li>
+            <li>Rebalanceo automático</li>
+            <li>Etiquetas ilimitadas</li>
+            <li>15% desc. en consultoría fiscal</li>
+          </ul>
+          <a class="btn" href="https://acostafconsulting.gumroad.com/l/portfoliotrackerpremium">Comprar Premium</a>
+        </div>
+        <div class="plan destacado">
+          <h3>Lifetime</h3>
+          <div class="precio">$89.99 <small>USD · pago único</small></div>
+          <div class="mxn">≈ $1,665 MXN</div>
+          <ul>
+            <li>Todo lo de Premium, para siempre</li>
+            <li>Actualizaciones incluidas</li>
+            <li>20% desc. en consultoría fiscal</li>
+            <li>Sin mensualidades, nunca</li>
+          </ul>
+          <a class="btn" href="https://acostafconsulting.gumroad.com/l/portfoliotrackerlifetime">Comprar Lifetime</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== DESCARGA ========== -->
+    <section id="descarga">
+      <span class="etiqueta">Descarga</span>
+      <h2>Instalador para Windows</h2>
+      <p class="sub">Instalador NSIS firmado por hash. Verifica la integridad comparando el SHA-256 después de descargar.</p>
+      <div class="descarga">
+        <div style="flex:1; min-width: 260px">
+          <div style="font-weight:700; margin-bottom:4px">TrackerPortafolio-Setup.exe</div>
+          <div class="sha">SHA-256: [SHA256-PENDING]</div>
+        </div>
+        <a class="btn" href="https://github.com/AcostaConsulting/Portfolio-Tracker/releases/latest">Descargar desde GitHub Releases</a>
+      </div>
+    </section>
+
+    <!-- ========== FAQ ========== -->
+    <section>
+      <span class="etiqueta">FAQ</span>
+      <h2>Preguntas frecuentes</h2>
+      <div style="margin-top: 22px">
+        <details>
+          <summary>¿De verdad mis datos no salen de mi computadora?</summary>
+          <p>De verdad. No hay cuenta, no hay servidor nuestro, no hay telemetría. La app solo toca internet si tú activas precios en vivo o buscas actualizaciones — y puedes verificarlo con cualquier monitor de red.</p>
+        </details>
+        <details>
+          <summary>¿Cómo funciona la licencia si no hay servidor?</summary>
+          <p>Tu código de activación viene firmado criptográficamente (RSA-2048). La app lo verifica con matemáticas, no con un servidor. Funciona sin internet, para siempre.</p>
+        </details>
+        <details>
+          <summary>¿Qué instrumentos de renta fija soporta?</summary>
+          <p>CETES, Bonos M, UDIBONOS, pagarés bancarios, SOFIPOs y cuentas de ahorro con tasa diaria (tipo Nu). Cada uno con su convención real de cálculo y retención ISR estimada configurable.</p>
+        </details>
+        <details>
+          <summary>¿Puedo probar antes de pagar?</summary>
+          <p>El plan Free no caduca y no pide tarjeta. Captura ilimitada, renta fija completa e importación desde Excel incluidas.</p>
+        </details>
+        <details>
+          <summary>¿Y si cambio de computadora?</summary>
+          <p>Respalda a un archivo (con cifrado por PIN opcional), restáuralo en la máquina nueva y vuelve a pegar tu código de licencia. Listo.</p>
+        </details>
+      </div>
+    </section>
+
+    <footer>
+      <span>© 2026 Acosta F Consulting</span>
+      <a href="https://github.com/AcostaConsulting/Portfolio-Tracker/blob/main/PRIVACY.md">Privacidad</a>
+      <a href="https://github.com/AcostaConsulting/Portfolio-Tracker/blob/main/TERMINOS.md">Términos</a>
+      <a href="https://franscisco-acosta.odoo.com/contactus">Contacto</a>
+    </footer>
+  </div>
+</body>
+</html>
