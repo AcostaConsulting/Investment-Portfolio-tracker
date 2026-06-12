@@ -5,6 +5,8 @@ import { useApp } from './store'
 import { calcularPortafolio, type ResultadoPortafolio } from '../engine/portafolio'
 import { alertasVencimiento, type AlertaVencimiento } from '../engine/rentaFija'
 import { calcularDiversificacion, type VistaDiversificacion } from '../engine/diversificacion'
+import { evaluarAlertas, type AlertaDisparada } from '../engine/alertas'
+import { tieneCapacidad } from '../licencias/planes'
 import type { ContextoValuacion } from '../engine/tipos'
 import { hoyIso, sumarDias } from '../engine/fechas'
 
@@ -37,6 +39,18 @@ export function useAlertasVencimiento(): AlertaVencimiento[] {
   return useMemo(
     () => alertasVencimiento(doc.activos, hoyIso(), doc.ajustes.diasAlertaVencimiento),
     [doc.activos, doc.ajustes.diasAlertaVencimiento],
+  )
+}
+
+/** Alertas de precio disparadas con los precios vigentes (Pro+). */
+export function useAlertasDisparadas(): AlertaDisparada[] {
+  const { posiciones } = usePortafolio()
+  const alertas = useApp((s) => s.doc.alertasPrecio)
+  const precios = useApp((s) => s.doc.precios)
+  const plan = useApp((s) => s.plan)
+  return useMemo(
+    () => (tieneCapacidad(plan, 'alertasPrecio') ? evaluarAlertas(posiciones, alertas, precios) : []),
+    [posiciones, alertas, precios, plan],
   )
 }
 

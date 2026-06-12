@@ -4,6 +4,8 @@
  */
 
 import type { Activo, Operacion, PrecioActual } from '../engine/tipos'
+import type { ConfigAlerta } from '../engine/alertas'
+import type { MetaFinanciera } from '../engine/metas'
 
 export type Idioma = 'es' | 'en' | 'fr' | 'zh' | 'ja'
 export type Tema = 'claro' | 'oscuro' | 'sistema'
@@ -21,6 +23,8 @@ export interface Ajustes {
   preciosEnVivo: boolean
   /** Opt-in: buscar actualizaciones en GitHub Releases. */
   buscarActualizaciones: boolean
+  /** Umbral del aviso de liquidez (% líquido mínimo deseado). */
+  umbralLiquidezPct: number
 }
 
 export interface Etiqueta {
@@ -30,25 +34,17 @@ export interface Etiqueta {
   color: string
 }
 
-export interface Meta {
+/** Metas por clase o totales — la forma vive en el motor. */
+export type Meta = MetaFinanciera
+
+/** Alertas con piso/techo — la forma vive en el motor. */
+export type AlertaPrecio = ConfigAlerta
+
+/** Benchmark de captura manual: nombre + rendimiento % del período. */
+export interface BenchmarkManual {
   id: string
   nombre: string
-  /** Monto objetivo en moneda base. */
-  objetivo: number
-  fechaLimite?: string
-  /** Ids de activos que cuentan para la meta; vacío = todo el portafolio. */
-  activos: string[]
-}
-
-export interface AlertaPrecio {
-  id: string
-  activoId: string
-  condicion: 'mayor' | 'menor'
-  /** Umbral en la moneda del activo. */
-  precio: number
-  activa: boolean
-  /** Fecha ISO en que se disparó por última vez. */
-  disparada?: string
+  rendimientoPct: number
 }
 
 export interface ObjetivoRebalanceo {
@@ -76,6 +72,7 @@ export interface DocumentoStore {
   etiquetas: Etiqueta[]
   metas: Meta[]
   alertasPrecio: AlertaPrecio[]
+  benchmarks: BenchmarkManual[]
   rebalanceo?: ObjetivoRebalanceo
   /** Un punto por día con actividad; tope ~3 años. */
   historico: PuntoHistorico[]
@@ -98,10 +95,12 @@ export function documentoInicial(): DocumentoStore {
       diasAlertaVencimiento: 30,
       preciosEnVivo: false,
       buscarActualizaciones: false,
+      umbralLiquidezPct: 10,
     },
     etiquetas: [],
     metas: [],
     alertasPrecio: [],
+    benchmarks: [],
     historico: [],
     onboardingCompletado: false,
     tourCompletado: false,
@@ -126,8 +125,24 @@ export function migrarDocumento(crudo: unknown): DocumentoStore {
     precios: doc.precios ?? {},
     tiposCambio: doc.tiposCambio ?? {},
     etiquetas: doc.etiquetas ?? [],
-    metas: doc.metas ?? [],
-    alertasPrecio: doc.alertasPrecio ?? [],
+    metas: (doc.metas ?? []).map(migrarMeta),
+    alertasPrecio: (doc.alertasPrecio ?? []).map(migrarAlerta),
+    benchmarks: doc.benchmarks ?? [],
     historico: doc.historico ?? [],
   }
+}
+
+/** Sesión 1 guardaba metas con lista de activos; ahora son por clase o totales. */
+function migrarMeta(cruda: Meta & { activos?: string[] }): Meta {
+  const { activos: _ignorado, ...meta } = cruda
+  return meta
+}
+
+/** Sesión 1: {condicion: 'mayor'|'menor', precio} → ahora piso/techo. */
+function migrarAlerta(cruda: AlertaPrecio & { condicion?: 'mayor' | 'menor'; precio?: number }): AlertaPrecio {
+  if (cruda.condicion && cruda.precio !== undefined) {
+    const { condicion, precio, ...resto } = cruda
+    return condicion === 'mayor' ? { ...resto, precioMax: precio } : { ...resto, precioMin: precio }
+  }
+  return cruda
 }

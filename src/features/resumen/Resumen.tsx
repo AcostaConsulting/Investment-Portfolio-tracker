@@ -1,7 +1,13 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApp } from '../../state/store'
-import { useAlertasVencimiento, useDiversificacion, usePortafolio } from '../../state/selectores'
+import {
+  useAlertasDisparadas,
+  useAlertasVencimiento,
+  useDiversificacion,
+  usePortafolio,
+} from '../../state/selectores'
+import { TarjetaConsultoria } from './TarjetaConsultoria'
 import { Cifra, Porcentaje } from '../../ui/Cifra'
 import { Icono } from '../../ui/Icono'
 import { DIMENSIONES, GraficaDiversificacion, type Dimension } from '../../ui/GraficaDiversificacion'
@@ -21,6 +27,7 @@ export function Resumen({ irA }: { irA: (vista: Vista) => void }) {
   const { posiciones, totales, advertencias } = usePortafolio()
   const diversificacion = useDiversificacion()
   const vencimientos = useAlertasVencimiento()
+  const alertasDisparadas = useAlertasDisparadas()
   const base = totales.monedaBase
   const [dimension, setDimension] = useState<Dimension>('clase')
 
@@ -53,6 +60,12 @@ export function Resumen({ irA }: { irA: (vista: Vista) => void }) {
     <div className="vista">
       <div className="vista-cabecera">
         <h1>{t('nav.resumen')}</h1>
+        {alertasDisparadas.length > 0 && (
+          <button className="chip ambar" style={{ cursor: 'pointer', border: 'none' }} onClick={() => irA('analisis')}>
+            <Icono nombre="alerta" tam={13} />
+            {t('alertasPrecio.badge', { count: alertasDisparadas.length })}
+          </button>
+        )}
       </div>
 
       {(sinPrecio > 0 || sinTc) && (
@@ -197,6 +210,8 @@ export function Resumen({ irA }: { irA: (vista: Vista) => void }) {
           </div>
         )}
       </div>
+
+      <TarjetaConsultoria />
     </div>
   )
 }

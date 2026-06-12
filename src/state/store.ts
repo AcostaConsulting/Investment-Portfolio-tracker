@@ -11,6 +11,7 @@ import {
   migrarDocumento,
   type Ajustes,
   type AlertaPrecio,
+  type BenchmarkManual,
   type DocumentoStore,
   type Etiqueta,
   type Meta,
@@ -56,6 +57,8 @@ export interface EstadoApp {
   eliminarMeta(id: string): void
   guardarAlertaPrecio(alerta: AlertaPrecio): void
   eliminarAlertaPrecio(id: string): void
+  guardarBenchmark(benchmark: BenchmarkManual): void
+  eliminarBenchmark(id: string): void
   fijarRebalanceo(objetivo: ObjetivoRebalanceo | undefined): void
   completarOnboarding(): void
   completarTour(): void
@@ -186,6 +189,19 @@ export const useApp = create<EstadoApp>((set, get) => ({
 
   eliminarAlertaPrecio(id) {
     get().mutarDoc((doc) => ({ ...doc, alertasPrecio: doc.alertasPrecio.filter((a) => a.id !== id) }))
+  },
+
+  guardarBenchmark(benchmark) {
+    get().mutarDoc((doc) => ({
+      ...doc,
+      benchmarks: doc.benchmarks.some((b) => b.id === benchmark.id)
+        ? doc.benchmarks.map((b) => (b.id === benchmark.id ? benchmark : b))
+        : [...doc.benchmarks, benchmark],
+    }))
+  },
+
+  eliminarBenchmark(id) {
+    get().mutarDoc((doc) => ({ ...doc, benchmarks: doc.benchmarks.filter((b) => b.id !== id) }))
   },
 
   fijarRebalanceo(objetivo) {

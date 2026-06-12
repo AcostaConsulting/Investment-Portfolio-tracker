@@ -4,19 +4,22 @@ import { Modal } from '../../ui/Modal'
 import { useApp } from '../../state/store'
 import type { Posicion } from '../../engine/portafolio'
 
+/** Alta rápida de alerta piso/techo desde la fila de Posiciones. */
 export function AlertaPrecioModal({ posicion, alCerrar }: { posicion: Posicion; alCerrar: () => void }) {
   const { t } = useTranslation()
   const guardarAlertaPrecio = useApp((s) => s.guardarAlertaPrecio)
-  const [condicion, setCondicion] = useState<'mayor' | 'menor'>('mayor')
-  const [precio, setPrecio] = useState('')
+  const [min, setMin] = useState('')
+  const [max, setMax] = useState('')
+
+  const valida = Number(min) > 0 || Number(max) > 0
 
   function guardar() {
-    if (!(Number(precio) > 0)) return
+    if (!valida) return
     guardarAlertaPrecio({
       id: crypto.randomUUID(),
       activoId: posicion.activo.id,
-      condicion,
-      precio: Number(precio),
+      ...(Number(min) > 0 ? { precioMin: Number(min) } : {}),
+      ...(Number(max) > 0 ? { precioMax: Number(max) } : {}),
       activa: true,
     })
     alCerrar()
@@ -32,7 +35,7 @@ export function AlertaPrecioModal({ posicion, alCerrar }: { posicion: Posicion; 
           <button className="btn" onClick={alCerrar}>
             {t('comunes.cancelar')}
           </button>
-          <button className="btn btn-primario" onClick={guardar} disabled={!(Number(precio) > 0)}>
+          <button className="btn btn-primario" onClick={guardar} disabled={!valida}>
             {t('comunes.guardar')}
           </button>
         </>
@@ -40,17 +43,16 @@ export function AlertaPrecioModal({ posicion, alCerrar }: { posicion: Posicion; 
     >
       <div className="form-rejilla">
         <div className="campo">
-          <label>{t('alertasPrecio.condicion')}</label>
-          <select value={condicion} onChange={(e) => setCondicion(e.target.value as 'mayor' | 'menor')}>
-            <option value="mayor">{t('alertasPrecio.mayor')}</option>
-            <option value="menor">{t('alertasPrecio.menor')}</option>
-          </select>
+          <label>
+            {t('alertasPrecio.precioMin')} ({posicion.activo.moneda})
+          </label>
+          <input type="number" step="any" min="0" value={min} onChange={(e) => setMin(e.target.value)} autoFocus />
         </div>
         <div className="campo">
           <label>
-            {t('comunes.precio')} ({posicion.activo.moneda})
+            {t('alertasPrecio.precioMax')} ({posicion.activo.moneda})
           </label>
-          <input type="number" step="any" min="0" value={precio} onChange={(e) => setPrecio(e.target.value)} autoFocus />
+          <input type="number" step="any" min="0" value={max} onChange={(e) => setMax(e.target.value)} />
         </div>
       </div>
     </Modal>

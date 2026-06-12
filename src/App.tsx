@@ -7,13 +7,12 @@ import { temaEfectivo, useTema } from './tema'
 import { ModalPlanes } from './ui/ModalPlanes'
 import { cambiarIdioma } from './i18n'
 import { Icono, type NombreIcono } from './ui/Icono'
-import { tieneCapacidad } from './licencias/planes'
 import { Resumen } from './features/resumen/Resumen'
 import { Posiciones } from './features/posiciones/Posiciones'
 import { Movimientos } from './features/movimientos/Movimientos'
 import { RentaFija } from './features/rentafija/RentaFija'
 import { Analisis } from './features/analisis/Analisis'
-import { Metas } from './features/metas/Metas'
+import { Ayuda } from './features/ayuda/Ayuda'
 import { Configuracion } from './features/configuracion/Configuracion'
 import { Onboarding } from './features/onboarding/Onboarding'
 import { Tour } from './features/onboarding/Tour'
@@ -24,16 +23,16 @@ export type Vista =
   | 'movimientos'
   | 'rentafija'
   | 'analisis'
-  | 'metas'
+  | 'ayuda'
   | 'configuracion'
 
-const NAVEGACION: { vista: Vista; icono: NombreIcono; premium?: boolean }[] = [
+const NAVEGACION: { vista: Vista; icono: NombreIcono }[] = [
   { vista: 'resumen', icono: 'resumen' },
   { vista: 'posiciones', icono: 'posiciones' },
   { vista: 'movimientos', icono: 'movimientos' },
   { vista: 'rentafija', icono: 'rentaFija' },
-  { vista: 'analisis', icono: 'analisis', premium: true },
-  { vista: 'metas', icono: 'metas', premium: true },
+  { vista: 'analisis', icono: 'analisis' },
+  { vista: 'ayuda', icono: 'ayuda' },
   { vista: 'configuracion', icono: 'configuracion' },
 ]
 
@@ -43,7 +42,7 @@ const ETIQUETA_NAV = {
   movimientos: 'nav.movimientos',
   rentafija: 'nav.rentaFija',
   analisis: 'nav.analisis',
-  metas: 'nav.metas',
+  ayuda: 'nav.ayuda',
   configuracion: 'nav.configuracion',
 } as const
 
@@ -72,8 +71,6 @@ export default function App() {
 
   if (!onboardingCompletado) return <Onboarding />
 
-  const conCandado = (premium?: boolean) => premium && !tieneCapacidad(plan, 'benchmarks')
-
   return (
     <div className="app">
       <aside className="lateral">
@@ -81,7 +78,7 @@ export default function App() {
           Tracker de <em>Portafolio</em>
         </div>
         <div className="lateral-lema mini suave">{t('app.lema')}</div>
-        {NAVEGACION.map(({ vista: v, icono, premium }) => (
+        {NAVEGACION.map(({ vista: v, icono }) => (
           <button
             key={v}
             className={`nav-item ${vista === v ? 'activo' : ''}`}
@@ -90,11 +87,6 @@ export default function App() {
           >
             <Icono nombre={icono} />
             {t(ETIQUETA_NAV[v])}
-            {conCandado(premium) && (
-              <span className="candadito">
-                <Icono nombre="candado" tam={13} />
-              </span>
-            )}
           </button>
         ))}
         <div className="lateral-pie">
@@ -122,7 +114,7 @@ export default function App() {
         {vista === 'movimientos' && <Movimientos />}
         {vista === 'rentafija' && <RentaFija />}
         {vista === 'analisis' && <Analisis />}
-        {vista === 'metas' && <Metas />}
+        {vista === 'ayuda' && <Ayuda />}
         {vista === 'configuracion' && <Configuracion />}
       </main>
       {!tourCompletado && <Tour />}
