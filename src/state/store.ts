@@ -18,6 +18,7 @@ import {
   type ObjetivoRebalanceo,
 } from './documento'
 import { planEfectivo, validarLicencia, type EstadoLicencia } from '../licencias/validar'
+import { crearDatosEjemplo } from './ejemplo'
 import type { Plan } from '../licencias/planes'
 import { hoyIso } from '../engine/fechas'
 import llavePublicaPem from '../licencias/llave-publica.pem?raw'
@@ -62,6 +63,8 @@ export interface EstadoApp {
   fijarRebalanceo(objetivo: ObjetivoRebalanceo | undefined): void
   completarOnboarding(): void
   completarTour(): void
+  /** Carga el portafolio ficticio del onboarding. */
+  cargarDatosEjemplo(): void
   /** Guarda el valor del portafolio del día (un punto por fecha). */
   registrarSnapshot(valor: number): void
 
@@ -210,6 +213,17 @@ export const useApp = create<EstadoApp>((set, get) => ({
 
   completarOnboarding() {
     get().mutarDoc((doc) => ({ ...doc, onboardingCompletado: true }))
+  },
+
+  cargarDatosEjemplo() {
+    const ejemplo = crearDatosEjemplo()
+    get().mutarDoc((doc) => ({
+      ...doc,
+      activos: [...doc.activos, ...ejemplo.activos],
+      operaciones: [...doc.operaciones, ...ejemplo.operaciones],
+      precios: { ...doc.precios, ...ejemplo.precios },
+      tiposCambio: { ...ejemplo.tiposCambio, ...doc.tiposCambio },
+    }))
   },
 
   completarTour() {

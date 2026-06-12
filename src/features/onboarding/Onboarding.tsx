@@ -1,3 +1,5 @@
+/** Wizard de primera apertura: bienvenida → configuración → punto de partida. */
+
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApp } from '../../state/store'
@@ -5,22 +7,20 @@ import { IDIOMAS } from '../../i18n'
 import type { Idioma } from '../../state/documento'
 import { Icono } from '../../ui/Icono'
 
-const MONEDAS = ['MXN', 'USD', 'EUR']
+const MONEDAS = ['MXN', 'USD']
 
 export function Onboarding() {
   const { t } = useTranslation()
   const actualizarAjustes = useApp((s) => s.actualizarAjustes)
   const completarOnboarding = useApp((s) => s.completarOnboarding)
+  const cargarDatosEjemplo = useApp((s) => s.cargarDatosEjemplo)
   const ajustes = useApp((s) => s.doc.ajustes)
   const [paso, setPaso] = useState(0)
 
-  const pasos = [
-    { titulo: t('onboarding.titulo1'), texto: t('onboarding.texto1'), icono: 'candado' as const },
-    { titulo: t('onboarding.titulo2'), texto: t('onboarding.texto2'), icono: 'resumen' as const },
-    { titulo: t('onboarding.titulo3'), texto: t('onboarding.texto3'), icono: 'rentaFija' as const },
-  ]
-
-  const esUltimo = paso === pasos.length
+  function empezar(conEjemplo: boolean) {
+    if (conEjemplo) cargarDatosEjemplo()
+    completarOnboarding()
+  }
 
   return (
     <div className="onboarding">
@@ -29,15 +29,17 @@ export function Onboarding() {
           Tracker de <em>Portafolio</em>
         </div>
 
-        {!esUltimo ? (
+        {paso === 0 && (
           <>
             <span style={{ color: 'var(--accent)', margin: '18px 0 6px' }}>
-              <Icono nombre={pasos[paso]!.icono} tam={34} />
+              <Icono nombre="resumen" tam={34} />
             </span>
-            <h2>{pasos[paso]!.titulo}</h2>
-            <p className="suave">{pasos[paso]!.texto}</p>
+            <h2>{t('onboarding.titulo1')}</h2>
+            <p className="suave">{t('onboarding.texto1')}</p>
           </>
-        ) : (
+        )}
+
+        {paso === 1 && (
           <>
             <h2 style={{ marginTop: 18 }}>{t('onboarding.bienvenida')}</h2>
             <div className="form-rejilla" style={{ width: '100%', marginTop: 10 }}>
@@ -65,21 +67,35 @@ export function Onboarding() {
           </>
         )}
 
+        {paso === 2 && (
+          <>
+            <h2 style={{ marginTop: 18 }}>{t('onboarding.comoEmpezar')}</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', marginTop: 10 }}>
+              <button className="btn btn-primario" style={{ justifyContent: 'center' }} onClick={() => empezar(true)}>
+                {t('onboarding.cargarEjemplo')}
+              </button>
+              <span className="mini suave">{t('onboarding.ejemploAyuda')}</span>
+              <button className="btn" style={{ justifyContent: 'center' }} onClick={() => empezar(false)}>
+                {t('onboarding.empezarBlanco')}
+              </button>
+            </div>
+          </>
+        )}
+
         <div className="onboarding-puntos">
-          {[...pasos, null].map((_, i) => (
+          {[0, 1, 2].map((i) => (
             <span key={i} className={i === paso ? 'activo' : ''} />
           ))}
         </div>
 
         <div style={{ display: 'flex', gap: 8, width: '100%', justifyContent: 'space-between' }}>
-          <button className="btn btn-fantasma" onClick={() => (paso > 0 ? setPaso(paso - 1) : completarOnboarding())}>
+          <button
+            className="btn btn-fantasma"
+            onClick={() => (paso > 0 ? setPaso(paso - 1) : completarOnboarding())}
+          >
             {paso > 0 ? t('comunes.atras') : t('comunes.omitir')}
           </button>
-          {esUltimo ? (
-            <button className="btn btn-primario" onClick={completarOnboarding}>
-              {t('onboarding.empezar')}
-            </button>
-          ) : (
+          {paso < 2 && (
             <button className="btn btn-primario" onClick={() => setPaso(paso + 1)}>
               {t('comunes.siguiente')}
             </button>
