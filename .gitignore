@@ -10,3 +10,8 @@ release/
 secrets/
 *.pem
 !src/licencias/llave-publica.pem
+
+# Notas internas de sesión (diagnostico de licencias, handoffs) — no publicas
+handoff.md
+HANDOFF-LICENCIAS.md
+GUIA-LICENCIAS.md
