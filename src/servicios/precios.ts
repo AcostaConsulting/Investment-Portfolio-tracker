@@ -58,20 +58,73 @@ async function preciosCripto(simbolos: string[], monedaBase: string): Promise<Re
   return resultado
 }
 
-async function preciosAcciones(
-  simbolos: string[],
-): Promise<Record<string, { precio: number; moneda: string }>> {
-  if (simbolos.length === 0) return {}
-  const datos = (await json(
-    `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(simbolos.join(','))}`,
-  )) as { quoteResponse?: { result?: { symbol: string; regularMarketPrice?: number; currency?: string }[] } }
-  const resultado: Record<string, { precio: number; moneda: string }> = {}
-  for (const fila of datos.quoteResponse?.result ?? []) {
-    if (fila.regularMarketPrice !== undefined && fila.currency) {
+const HOST_YAHOO = 'https://query1.finance.yahoo.com'
+
+export interface PrecioAccion {
+  precio: number
+  moneda: string
+}
+
+/** Parser PURO de la respuesta del endpoint v7/finance/quote (lote). */
+export function parseQuoteV7(datos: unknown): Record<string, PrecioAccion> {
+  const d = (datos ?? {}) as {
+    quoteResponse?: { result?: { symbol?: string; regularMarketPrice?: number; currency?: string }[] }
+  }
+  const resultado: Record<string, PrecioAccion> = {}
+  for (const fila of d.quoteResponse?.result ?? []) {
+    if (fila.symbol && fila.regularMarketPrice !== undefined && fila.currency) {
       resultado[fila.symbol] = { precio: fila.regularMarketPrice, moneda: fila.currency.toUpperCase() }
     }
   }
   return resultado
+}
+
+/** Parser PURO de la respuesta del endpoint v8/finance/chart/{symbol} (un activo). */
+export function parseChartV8(datos: unknown): PrecioAccion | undefined {
+  const meta = (
+    (datos ?? {}) as { chart?: { result?: { meta?: { regularMarketPrice?: number; currency?: string } }[] } }
+  ).chart?.result?.[0]?.meta
+  if (!meta || meta.regularMarketPrice === undefined || !meta.currency) return undefined
+  return { precio: meta.regularMarketPrice, moneda: meta.currency.toUpperCase() }
+}
+
+/**
+ * Precios de acciones con fallback. Yahoo v7/quote empezó a exigir
+ * cookies/crumb y responde "Unauthorized"; cuando falla, se usa el
+ * endpoint v8/finance/chart/{symbol} (no requiere crumb), uno por activo.
+ */
+async function preciosAcciones(simbolos: string[]): Promise<Record<string, PrecioAccion>> {
+  if (simbolos.length === 0) return {}
+  // Intento 1: v7 quote — un solo request para todos los símbolos.
+  try {
+    const datos = await json(`${HOST_YAHOO}/v7/finance/quote?symbols=${encodeURIComponent(simbolos.join(','))}`)
+    const resultado = parseQuoteV7(datos)
+    const faltan = simbolos.filter((s) => !(s in resultado))
+    if (faltan.length === 0) return resultado
+    // v7 devolvió algunos pero no todos: completa los faltantes con v8.
+    return { ...resultado, ...(await preciosAccionesV8(faltan)) }
+  } catch {
+    // v7 caído (típicamente Unauthorized): v8 para todos.
+    return preciosAccionesV8(simbolos)
+  }
+}
+
+/** Fallback: v8/finance/chart por símbolo, tolerando fallas individuales. */
+async function preciosAccionesV8(simbolos: string[]): Promise<Record<string, PrecioAccion>> {
+  const entradas = await Promise.all(
+    simbolos.map(async (simbolo) => {
+      try {
+        const datos = await json(
+          `${HOST_YAHOO}/v8/finance/chart/${encodeURIComponent(simbolo)}?range=1d&interval=1d`,
+        )
+        const precio = parseChartV8(datos)
+        return precio ? ([simbolo, precio] as const) : null
+      } catch {
+        return null
+      }
+    }),
+  )
+  return Object.fromEntries(entradas.filter((e): e is NonNullable<typeof e> => e !== null))
 }
 
 async function tipoCambio(de: string, a: string): Promise<number | undefined> {
