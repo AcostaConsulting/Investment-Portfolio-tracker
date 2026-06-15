@@ -1,25 +1,29 @@
 import { describe, expect, it } from 'vitest'
-import { obtenerPrecioConsultoria, PRECIO_BASE_CONSULTORIA_USD } from './consultoria'
+import { obtenerPrecioConsultoria, PRECIO_BASE_CONSULTORIA_MXN } from './consultoria'
 
 describe('obtenerPrecioConsultoria', () => {
+  it('el precio base es MXN $800', () => {
+    expect(PRECIO_BASE_CONSULTORIA_MXN).toBe(800)
+  })
+
   it('Free paga precio completo, sin descuento', () => {
     expect(obtenerPrecioConsultoria('free')).toEqual({
-      precioBaseUsd: 149,
+      precioBaseMxn: 800,
       descuentoPct: 0,
-      precioFinalUsd: 149,
-      ahorroUsd: 0,
+      precioFinalMxn: 800,
+      ahorroMxn: 0,
     })
   })
 
-  it('descuentos por plan: Pro 10%, Premium 15%, Lifetime 20%', () => {
-    expect(obtenerPrecioConsultoria('pro')).toMatchObject({ descuentoPct: 10, precioFinalUsd: 134.1 })
-    expect(obtenerPrecioConsultoria('premium')).toMatchObject({ descuentoPct: 15, precioFinalUsd: 126.65 })
-    expect(obtenerPrecioConsultoria('lifetime')).toMatchObject({ descuentoPct: 20, precioFinalUsd: 119.2 })
+  it('descuentos por plan: Pro 10%, Premium 15%, Lifetime 20% sobre $800', () => {
+    expect(obtenerPrecioConsultoria('pro')).toMatchObject({ descuentoPct: 10, precioFinalMxn: 720 })
+    expect(obtenerPrecioConsultoria('premium')).toMatchObject({ descuentoPct: 15, precioFinalMxn: 680 })
+    expect(obtenerPrecioConsultoria('lifetime')).toMatchObject({ descuentoPct: 20, precioFinalMxn: 640 })
   })
 
   it('el ahorro cuadra contra el precio base', () => {
     const p = obtenerPrecioConsultoria('lifetime')
-    expect(p.ahorroUsd).toBeCloseTo(PRECIO_BASE_CONSULTORIA_USD - p.precioFinalUsd, 2)
-    expect(p.ahorroUsd).toBe(29.8)
+    expect(p.ahorroMxn).toBeCloseTo(PRECIO_BASE_CONSULTORIA_MXN - p.precioFinalMxn, 2)
+    expect(p.ahorroMxn).toBe(160)
   })
 })
