@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { Icono } from './Icono'
 
 export function Modal({
@@ -28,7 +29,11 @@ export function Modal({
 
   if (!abierto) return null
 
-  return (
+  // Portal a <body>: un modal con position:fixed se rompe si algún ancestro
+  // crea un containing block (transform/animación) o lo recorta con
+  // overflow:hidden — justo lo que pasaba dentro de las secciones colapsables
+  // de Análisis. Montándolo en body queda siempre relativo al viewport.
+  return createPortal(
     <div className="modal-fondo" onMouseDown={(e) => e.target === e.currentTarget && alCerrar()}>
       <div
         className="modal"
@@ -45,6 +50,7 @@ export function Modal({
         <div className="modal-cuerpo">{children}</div>
         {pie && <div className="modal-pie">{pie}</div>}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
