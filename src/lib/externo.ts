@@ -8,6 +8,7 @@
 
 const HOSTS_PERMITIDOS = new Set([
   'acostafconsulting.gumroad.com',
+  'acostaconsulting.odoo.com',
   'franscisco-acosta.odoo.com',
   'github.com',
 ])
