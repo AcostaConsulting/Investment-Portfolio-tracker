@@ -283,6 +283,25 @@ export function Configuracion() {
         </div>
       </div>
 
+      {/* ---------- Notificaciones ---------- */}
+      <div className="tarjeta">
+        <div className="etiqueta" style={{ marginBottom: 12 }}>
+          {t('configuracion.notificaciones')}
+        </div>
+        <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={ajustes.notificacionesAlertas}
+            onChange={(e) => actualizarAjustes({ notificacionesAlertas: e.target.checked })}
+          />
+          <span>
+            <strong>{t('configuracion.notificacionesAlertas')}</strong>
+            <br />
+            <span className="mini suave">{t('configuracion.notificacionesAlertasAyuda')}</span>
+          </span>
+        </label>
+      </div>
+
       {/* ---------- Datos ---------- */}
       <div className="tarjeta">
         <div className="etiqueta" style={{ marginBottom: 12 }}>

@@ -1,8 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApp } from './state/store'
 import { useUi } from './state/ui'
-import { usePortafolio } from './state/selectores'
+import { usePortafolio, useAlertasDisparadas } from './state/selectores'
+import { detectarNuevasAlertas } from './engine/notificaciones'
+import { notificarSistema } from './lib/notificar'
+import { formatoMoneda } from './ui/formato'
 import { temaEfectivo, useTema } from './tema'
 import { ModalPlanes } from './ui/ModalPlanes'
 import { cambiarIdioma } from './i18n'
@@ -119,6 +122,7 @@ export default function App() {
       </main>
       {!tourCompletado && <Tour />}
       <SnapshotDiario />
+      <NotificadorAlertas />
       <ModalPlanes />
     </div>
   )
@@ -152,5 +156,46 @@ function SnapshotDiario() {
   useEffect(() => {
     if (operaciones > 0) registrarSnapshot(totales.valorTotal)
   }, [operaciones, totales.valorTotal, registrarSnapshot])
+  return null
+}
+
+/**
+ * Notifica al SO cuando una alerta de precio pasa de no-disparada a disparada.
+ * El "qué cambió" lo decide el motor puro `detectarNuevasAlertas`; aquí solo
+ * vive el efecto (disparo nativo) y el estado de "ya notificadas".
+ */
+function NotificadorAlertas() {
+  const { t } = useTranslation()
+  const disparadas = useAlertasDisparadas()
+  const activadas = useApp((s) => s.doc.ajustes.notificacionesAlertas)
+  const yaNotificadas = useRef<Set<string>>(new Set())
+  // Las que ya estaban disparadas al abrir la app no se notifican (no es una
+  // transición que el usuario haya presenciado): se siembran en silencio.
+  const primeraVez = useRef(true)
+
+  useEffect(() => {
+    const { nuevas, clavesActuales } = detectarNuevasAlertas(yaNotificadas.current, disparadas)
+    yaNotificadas.current = clavesActuales
+    if (primeraVez.current) {
+      primeraVez.current = false
+      return
+    }
+    if (!activadas) return
+    for (const alerta of nuevas) {
+      const cuerpo =
+        alerta.tipo === 'min'
+          ? t('alertasPrecio.disparadaMin', {
+              simbolo: alerta.simbolo,
+              precio: formatoMoneda(alerta.precioActual, alerta.moneda),
+              umbral: formatoMoneda(alerta.umbral, alerta.moneda),
+            })
+          : t('alertasPrecio.disparadaMax', {
+              simbolo: alerta.simbolo,
+              precio: formatoMoneda(alerta.precioActual, alerta.moneda),
+              umbral: formatoMoneda(alerta.umbral, alerta.moneda),
+            })
+      notificarSistema(t('alertasPrecio.notificacionTitulo'), cuerpo)
+    }
+  }, [disparadas, activadas, t])
   return null
 }

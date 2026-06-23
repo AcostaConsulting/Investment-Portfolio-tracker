@@ -25,6 +25,8 @@ export interface Ajustes {
   buscarActualizaciones: boolean
   /** Umbral del aviso de liquidez (% líquido mínimo deseado). */
   umbralLiquidezPct: number
+  /** Avisar con notificación nativa cuando se dispara una alerta de precio. */
+  notificacionesAlertas: boolean
 }
 
 export interface Etiqueta {
@@ -96,6 +98,7 @@ export function documentoInicial(): DocumentoStore {
       preciosEnVivo: false,
       buscarActualizaciones: false,
       umbralLiquidezPct: 10,
+      notificacionesAlertas: true,
     },
     etiquetas: [],
     metas: [],
