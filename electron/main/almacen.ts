@@ -10,7 +10,10 @@ import path from 'node:path'
 
 const NOMBRE_DATOS = 'datos.json'
 const CARPETA_RESPALDOS = 'respaldos'
-const MAX_RESPALDOS = 20
+// 10 respaldos: cada copia es un JSON pequeño y el respaldo se hace como mucho
+// una vez cada 10 min (ver index.ts), así que 10 cubre varios días de historia
+// sin llenar el disco. Los más viejos se rotan.
+const MAX_RESPALDOS = 10
 
 function rutaDatos(): string {
   return path.join(app.getPath('userData'), NOMBRE_DATOS)
