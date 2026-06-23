@@ -11,6 +11,7 @@ import { TarjetaConsultoria } from './TarjetaConsultoria'
 import { Cifra, Porcentaje } from '../../ui/Cifra'
 import { Icono } from '../../ui/Icono'
 import { DIMENSIONES, GraficaDiversificacion, type Dimension } from '../../ui/GraficaDiversificacion'
+import { GraficaEvolucion } from '../../ui/GraficaEvolucion'
 import { formatoMoneda, formatoPct } from '../../ui/formato'
 import type { Vista } from '../../App'
 import type { ClaseActivo } from '../../engine/tipos'
@@ -128,6 +129,8 @@ export function Resumen({ irA }: { irA: (vista: Vista) => void }) {
           </span>
         </div>
       </div>
+
+      <GraficaEvolucion historico={doc.historico} />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 12 }}>
         <div className="tarjeta">
