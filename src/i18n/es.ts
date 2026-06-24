@@ -146,8 +146,15 @@ export const es = {
     nuevo: 'Nuevo activo',
     editarTitulo: 'Editar activo',
     simboloAyuda: 'Ticker o clave corta: AAPL, BTC, CETES-182',
+    simboloFijo: 'El símbolo identifica al activo y no se puede cambiar.',
     monedaAyuda: 'Moneda en la que cotiza el activo',
     confirmaEliminar: 'Se eliminarán también sus operaciones. ¿Continuar?',
+  },
+  detalle: {
+    informacion: 'Información del activo',
+    transacciones: 'Transacciones',
+    sinOperaciones: 'Este activo todavía no tiene operaciones registradas.',
+    ver: 'Ver detalle',
   },
   rentaFija: {
     titulo: 'Renta fija',

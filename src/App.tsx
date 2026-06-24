@@ -19,6 +19,7 @@ import { Ayuda } from './features/ayuda/Ayuda'
 import { Configuracion } from './features/configuracion/Configuracion'
 import { Onboarding } from './features/onboarding/Onboarding'
 import { Tour } from './features/onboarding/Tour'
+import { DetalleActivo } from './features/detalle/DetalleActivo'
 
 export type Vista =
   | 'resumen'
@@ -58,6 +59,8 @@ export default function App() {
   const tourCompletado = useApp((s) => s.doc.tourCompletado)
   const plan = useApp((s) => s.plan)
   const abrirModalPlanes = useUi((s) => s.abrirModalPlanes)
+  const activoDetalle = useUi((s) => s.activoDetalle)
+  const cerrarDetalle = useUi((s) => s.cerrarDetalle)
   const [vista, setVista] = useState<Vista>('resumen')
 
   useEffect(() => {
@@ -84,8 +87,11 @@ export default function App() {
         {NAVEGACION.map(({ vista: v, icono }) => (
           <button
             key={v}
-            className={`nav-item ${vista === v ? 'activo' : ''}`}
-            onClick={() => setVista(v)}
+            className={`nav-item ${vista === v && !activoDetalle ? 'activo' : ''}`}
+            onClick={() => {
+              cerrarDetalle()
+              setVista(v)
+            }}
             data-tour={v}
           >
             <Icono nombre={icono} />
@@ -112,13 +118,19 @@ export default function App() {
         </div>
       </aside>
       <main className="contenido">
-        {vista === 'resumen' && <Resumen irA={setVista} />}
-        {vista === 'posiciones' && <Posiciones />}
-        {vista === 'movimientos' && <Movimientos />}
-        {vista === 'rentafija' && <RentaFija />}
-        {vista === 'analisis' && <Analisis />}
-        {vista === 'ayuda' && <Ayuda />}
-        {vista === 'configuracion' && <Configuracion />}
+        {activoDetalle ? (
+          <DetalleActivo />
+        ) : (
+          <>
+            {vista === 'resumen' && <Resumen irA={setVista} />}
+            {vista === 'posiciones' && <Posiciones />}
+            {vista === 'movimientos' && <Movimientos />}
+            {vista === 'rentafija' && <RentaFija />}
+            {vista === 'analisis' && <Analisis />}
+            {vista === 'ayuda' && <Ayuda />}
+            {vista === 'configuracion' && <Configuracion />}
+          </>
+        )}
       </main>
       {!tourCompletado && <Tour />}
       <SnapshotDiario />

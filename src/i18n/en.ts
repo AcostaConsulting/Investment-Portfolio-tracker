@@ -143,8 +143,15 @@ export const en: Diccionario = {
     nuevo: 'New asset',
     editarTitulo: 'Edit asset',
     simboloAyuda: 'Ticker or short code: AAPL, BTC, CETES-182',
+    simboloFijo: 'The symbol identifies the asset and cannot be changed.',
     monedaAyuda: 'Currency the asset trades in',
     confirmaEliminar: 'Its transactions will also be deleted. Continue?',
+  },
+  detalle: {
+    informacion: 'Asset information',
+    transacciones: 'Transactions',
+    sinOperaciones: 'This asset has no recorded transactions yet.',
+    ver: 'View detail',
   },
   rentaFija: {
     titulo: 'Fixed income',

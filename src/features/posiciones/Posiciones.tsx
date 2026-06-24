@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApp } from '../../state/store'
+import { useUi } from '../../state/ui'
 import { usePortafolio } from '../../state/selectores'
 import { Cifra, Porcentaje } from '../../ui/Cifra'
 import { Icono } from '../../ui/Icono'
@@ -16,6 +17,7 @@ export function Posiciones() {
   const doc = useApp((s) => s.doc)
   const plan = useApp((s) => s.plan)
   const fijarPrecio = useApp((s) => s.fijarPrecio)
+  const abrirDetalle = useUi((s) => s.abrirDetalle)
   const { posiciones, totales } = usePortafolio()
   const base = totales.monedaBase
 
@@ -90,7 +92,14 @@ export function Posiciones() {
                             background: `var(--c-${p.activo.clase === 'renta_fija' ? 'renta-fija' : p.activo.clase})`,
                           }}
                         />
-                        <span style={{ fontWeight: 600 }}>{p.activo.simbolo}</span>
+                        <button
+                          type="button"
+                          className="enlace-activo"
+                          onClick={() => abrirDetalle(p.activo.id)}
+                          title={t('detalle.ver')}
+                        >
+                          {p.activo.simbolo}
+                        </button>
                         <span className="mini suave">{p.activo.nombre}</span>
                         {p.activo.etiquetaIds?.map((id) => {
                           const e = doc.etiquetas.find((x) => x.id === id)
@@ -211,7 +220,14 @@ export function Posiciones() {
                 {cerradas.map((p) => (
                   <tr key={p.activo.id}>
                     <td>
-                      <span style={{ fontWeight: 600 }}>{p.activo.simbolo}</span>{' '}
+                      <button
+                        type="button"
+                        className="enlace-activo"
+                        onClick={() => abrirDetalle(p.activo.id)}
+                        title={t('detalle.ver')}
+                      >
+                        {p.activo.simbolo}
+                      </button>{' '}
                       <span className="mini suave">{p.activo.nombre}</span>
                     </td>
                     <td className="num">

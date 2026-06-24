@@ -15,6 +15,7 @@ import {
   type InstrumentoRentaFija,
 } from '../../engine/tipos'
 import { esFechaIsoValida, hoyIso } from '../../engine/fechas'
+import type { MetadatosEditables } from '../../engine/edicionActivo'
 
 const CLASES: ClaseActivo[] = ['accion', 'cripto', 'renta_fija']
 const INSTRUMENTOS: InstrumentoRentaFija[] = ['cetes', 'bono_m', 'udibono', 'pagare', 'sofipo', 'ahorro']
@@ -35,6 +36,7 @@ export function FormActivo({
 }) {
   const { t } = useTranslation()
   const guardarActivo = useApp((s) => s.guardarActivo)
+  const editarMetadatosActivo = useApp((s) => s.editarMetadatosActivo)
   const monedaBase = useApp((s) => s.doc.ajustes.monedaBase)
   const etiquetasDisponibles = useApp((s) => s.doc.etiquetas)
   const plan = useApp((s) => s.plan)
@@ -93,8 +95,24 @@ export function FormActivo({
         ...(tasaIsr !== '' ? { tasaIsr: Number(tasaIsr) } : {}),
       }
     }
+    if (existente) {
+      // Edición: solo metadatos. El engine preserva id/símbolo/clase.
+      const parche: MetadatosEditables = {
+        nombre: nombre.trim(),
+        moneda: moneda.trim().toUpperCase(),
+        sector: sector && !esRF ? sector : undefined,
+        geografia: geografia || undefined,
+        etiquetaIds: etiquetaIds.length > 0 ? etiquetaIds : undefined,
+        liquido,
+        rentaFija: esRF ? rentaFija : undefined,
+      }
+      editarMetadatosActivo(existente.id, parche)
+      alCerrar()
+      return
+    }
+
     const activo: Activo = {
-      id: existente?.id ?? crypto.randomUUID(),
+      id: crypto.randomUUID(),
       simbolo: simbolo.trim().toUpperCase(),
       nombre: nombre.trim(),
       clase,
@@ -134,9 +152,14 @@ export function FormActivo({
             value={simbolo}
             onChange={(e) => setSimbolo(e.target.value)}
             placeholder="AAPL, BTC, CETES-182"
-            autoFocus
+            autoFocus={!existente}
+            disabled={!!existente}
           />
-          {errores.simbolo ? <span className="error">{errores.simbolo}</span> : <span className="ayuda">{t('formActivo.simboloAyuda')}</span>}
+          {errores.simbolo ? (
+            <span className="error">{errores.simbolo}</span>
+          ) : (
+            <span className="ayuda">{existente ? t('formActivo.simboloFijo') : t('formActivo.simboloAyuda')}</span>
+          )}
         </div>
         <div className="campo">
           <label>{t('comunes.nombre')}</label>

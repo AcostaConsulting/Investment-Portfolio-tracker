@@ -17,6 +17,12 @@ import {
   type Meta,
   type ObjetivoRebalanceo,
 } from './documento'
+import {
+  editarMetadatosActivo as editarMetadatosActivoDoc,
+  editarOperacion as editarOperacionDoc,
+  eliminarOperacion as eliminarOperacionDoc,
+  type MetadatosEditables,
+} from '../engine/edicionActivo'
 import { planEfectivo, validarLicencia, type EstadoLicencia } from '../licencias/validar'
 import { crearDatosEjemplo } from './ejemplo'
 import type { Plan } from '../licencias/planes'
@@ -46,6 +52,8 @@ export interface EstadoApp {
 
   guardarActivo(activo: Activo): void
   eliminarActivo(id: string): void
+  /** Edita metadatos de un activo (nunca su id/símbolo/clase) vía engine. */
+  editarMetadatosActivo(activoId: string, parche: MetadatosEditables): void
   guardarOperacion(operacion: Operacion): void
   eliminarOperacion(id: string): void
   fijarPrecio(activoId: string, precio: PrecioActual): void
@@ -124,17 +132,16 @@ export const useApp = create<EstadoApp>((set, get) => ({
     })
   },
 
+  editarMetadatosActivo(activoId, parche) {
+    get().mutarDoc((doc) => editarMetadatosActivoDoc(doc, activoId, parche))
+  },
+
   guardarOperacion(operacion) {
-    get().mutarDoc((doc) => ({
-      ...doc,
-      operaciones: doc.operaciones.some((o) => o.id === operacion.id)
-        ? doc.operaciones.map((o) => (o.id === operacion.id ? operacion : o))
-        : [...doc.operaciones, operacion],
-    }))
+    get().mutarDoc((doc) => editarOperacionDoc(doc, operacion))
   },
 
   eliminarOperacion(id) {
-    get().mutarDoc((doc) => ({ ...doc, operaciones: doc.operaciones.filter((o) => o.id !== id) }))
+    get().mutarDoc((doc) => eliminarOperacionDoc(doc, id))
   },
 
   fijarPrecio(activoId, precio) {

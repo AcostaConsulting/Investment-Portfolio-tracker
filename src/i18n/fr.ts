@@ -143,8 +143,15 @@ export const fr: Diccionario = {
     nuevo: 'Nouvel actif',
     editarTitulo: 'Modifier l’actif',
     simboloAyuda: 'Ticker ou code court : AAPL, BTC, CETES-182',
+    simboloFijo: 'Le symbole identifie l’actif et ne peut pas être modifié.',
     monedaAyuda: 'Devise de cotation de l’actif',
     confirmaEliminar: 'Ses opérations seront aussi supprimées. Continuer ?',
+  },
+  detalle: {
+    informacion: 'Informations sur l’actif',
+    transacciones: 'Transactions',
+    sinOperaciones: 'Cet actif n’a pas encore d’opérations enregistrées.',
+    ver: 'Voir le détail',
   },
   rentaFija: {
     titulo: 'Revenu fixe',

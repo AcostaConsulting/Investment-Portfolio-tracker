@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApp } from '../../state/store'
+import { useUi } from '../../state/ui'
 import {
   useAlertasDisparadas,
   useAlertasVencimiento,
@@ -25,6 +26,7 @@ const COLOR_CLASE: Record<ClaseActivo, string> = {
 export function Resumen({ irA }: { irA: (vista: Vista) => void }) {
   const { t } = useTranslation()
   const doc = useApp((s) => s.doc)
+  const abrirDetalle = useUi((s) => s.abrirDetalle)
   const { posiciones, totales, advertencias } = usePortafolio()
   const diversificacion = useDiversificacion()
   const vencimientos = useAlertasVencimiento()
@@ -169,9 +171,15 @@ export function Resumen({ irA }: { irA: (vista: Vista) => void }) {
               return (
                 <div key={p.activo.id}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                    <span className="mini" style={{ fontWeight: 600 }}>
+                    <button
+                      type="button"
+                      className="enlace-activo"
+                      style={{ fontSize: 12 }}
+                      onClick={() => abrirDetalle(p.activo.id)}
+                      title={t('detalle.ver')}
+                    >
                       {p.activo.simbolo}
-                    </span>
+                    </button>
                     <span className="mini cifra suave">
                       {formatoMoneda(p.valorBase ?? 0, base)} · {formatoPct(pct)}
                     </span>

@@ -143,8 +143,15 @@ export const ja: Diccionario = {
     nuevo: '新しい資産',
     editarTitulo: '資産を編集',
     simboloAyuda: 'ティッカーまたは略称：AAPL、BTC、CETES-182',
+    simboloFijo: 'シンボルは資産を識別するため変更できません。',
     monedaAyuda: 'この資産の取引通貨',
     confirmaEliminar: 'この資産の取引もすべて削除されます。続けますか？',
+  },
+  detalle: {
+    informacion: '資産情報',
+    transacciones: '取引',
+    sinOperaciones: 'この資産にはまだ取引が登録されていません。',
+    ver: '詳細を見る',
   },
   rentaFija: {
     titulo: '債券・定期',

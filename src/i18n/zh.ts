@@ -143,8 +143,15 @@ export const zh: Diccionario = {
     nuevo: '新资产',
     editarTitulo: '编辑资产',
     simboloAyuda: '代码或简称：AAPL、BTC、CETES-182',
+    simboloFijo: '代码是该资产的唯一标识，无法修改。',
     monedaAyuda: '该资产的计价货币',
     confirmaEliminar: '其交易记录也会被删除。继续吗？',
+  },
+  detalle: {
+    informacion: '资产信息',
+    transacciones: '交易',
+    sinOperaciones: '该资产暂无任何交易记录。',
+    ver: '查看详情',
   },
   rentaFija: {
     titulo: '固定收益',
