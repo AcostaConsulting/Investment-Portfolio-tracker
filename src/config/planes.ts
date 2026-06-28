@@ -15,4 +15,4 @@ export const URLS_GUMROAD: Record<Exclude<Plan, 'free'>, string> = {
 }
 
 export const URL_CONSULTORIA = 'https://acostaconsulting.odoo.com/appointment/3'
-export const URL_CONTACTO = 'https://franscisco-acosta.odoo.com/contactus'
+export const URL_CONTACTO = 'https://acostaconsulting.odoo.com/contactus'
