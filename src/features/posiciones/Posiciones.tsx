@@ -10,6 +10,7 @@ import { formatoCantidad, formatoFecha, formatoMoneda } from '../../ui/formato'
 import { hoyIso } from '../../engine/fechas'
 import { tieneCapacidad } from '../../licencias/planes'
 import type { Posicion } from '../../engine/portafolio'
+import { ordenarPosiciones, type ColumnaOrden, type DireccionOrden } from './orden'
 import { AlertaPrecioModal } from '../analisis/AlertaPrecioModal'
 
 export function Posiciones() {
@@ -26,10 +27,18 @@ export function Posiciones() {
   const [monedaPrecio, setMonedaPrecio] = useState('')
   const [alertaPara, setAlertaPara] = useState<Posicion | undefined>()
   const [verCerradas, setVerCerradas] = useState(false)
+  const [orden, setOrden] = useState<{ col: ColumnaOrden; dir: DireccionOrden }>({ col: 'valor', dir: 'desc' })
 
-  const abiertas = posiciones.filter((p) => p.cantidad > 0).sort((a, b) => (b.valorBase ?? 0) - (a.valorBase ?? 0))
+  const abiertas = ordenarPosiciones(posiciones.filter((p) => p.cantidad > 0), orden.col, orden.dir)
   const cerradas = posiciones.filter((p) => p.cantidad === 0)
   const puedeAlertas = tieneCapacidad(plan, 'alertasPrecio')
+
+  function ordenarPor(col: ColumnaOrden) {
+    setOrden((o) =>
+      o.col === col ? { col, dir: o.dir === 'asc' ? 'desc' : 'asc' } : { col, dir: col === 'simbolo' ? 'asc' : 'desc' },
+    )
+  }
+  const flecha = (col: ColumnaOrden) => (orden.col === col ? (orden.dir === 'asc' ? ' ▲' : ' ▼') : '')
 
   function abrirCaptura(p: Posicion) {
     setCapturando(p)
@@ -63,13 +72,28 @@ export function Posiciones() {
           <table className="libro">
             <thead>
               <tr>
-                <th>{t('comunes.activo')}</th>
-                <th className="num">{t('comunes.cantidad')}</th>
+                <th className="orden" onClick={() => ordenarPor('simbolo')}>
+                  {t('comunes.activo')}
+                  {flecha('simbolo')}
+                </th>
+                <th className="num orden" onClick={() => ordenarPor('cantidad')}>
+                  {t('comunes.cantidad')}
+                  {flecha('cantidad')}
+                </th>
                 <th className="num">{t('posiciones.precioPromedio')}</th>
                 <th className="num">{t('posiciones.precioActual')}</th>
-                <th className="num">{t('posiciones.valorActual')}</th>
-                <th className="num">{t('posiciones.pnl')}</th>
-                <th className="num">{t('posiciones.rendimiento')}</th>
+                <th className="num orden" onClick={() => ordenarPor('valor')}>
+                  {t('posiciones.valorActual')}
+                  {flecha('valor')}
+                </th>
+                <th className="num orden" onClick={() => ordenarPor('pnl')}>
+                  {t('posiciones.pnl')}
+                  {flecha('pnl')}
+                </th>
+                <th className="num orden" onClick={() => ordenarPor('rendimiento')}>
+                  {t('posiciones.rendimiento')}
+                  {flecha('rendimiento')}
+                </th>
                 <th className="num">{t('posiciones.peso')}</th>
                 <th />
               </tr>

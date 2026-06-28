@@ -468,6 +468,16 @@ table.libro th {
   border-bottom: 3px double var(--border-strong);
 }
 
+table.libro th.orden {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+table.libro th.orden:hover {
+  color: var(--accent);
+}
+
 table.libro td {
   padding: 9px 14px;
   border-bottom: 1px solid var(--border);
