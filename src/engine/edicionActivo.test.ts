@@ -73,12 +73,19 @@ describe('editarMetadatosActivo', () => {
     expect(r.activos[0]!.sector).toBeUndefined()
   })
 
-  it('ignora intentos de cambiar simbolo o clase aunque vengan en el parche', () => {
+  it('permite cambiar la clase (el id y el símbolo siguen fijos)', () => {
     const d = doc([apple])
-    const parche = { nombre: 'X', simbolo: 'HACK', clase: 'cripto' } as unknown as MetadatosEditables
+    const r = editarMetadatosActivo(d, 'aapl', { clase: 'cripto' })
+    expect(r.activos[0]!.clase).toBe('cripto')
+    expect(r.activos[0]!.id).toBe('aapl')
+    expect(r.activos[0]!.simbolo).toBe('AAPL')
+  })
+
+  it('ignora intentos de cambiar el símbolo aunque venga en el parche', () => {
+    const d = doc([apple])
+    const parche = { nombre: 'X', simbolo: 'HACK' } as unknown as MetadatosEditables
     const r = editarMetadatosActivo(d, 'aapl', parche)
     expect(r.activos[0]!.simbolo).toBe('AAPL')
-    expect(r.activos[0]!.clase).toBe('accion')
     expect(r.activos[0]!.nombre).toBe('X')
   })
 

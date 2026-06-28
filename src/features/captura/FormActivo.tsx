@@ -96,9 +96,10 @@ export function FormActivo({
       }
     }
     if (existente) {
-      // Edición: solo metadatos. El engine preserva id/símbolo/clase.
+      // Edición: solo metadatos. El engine preserva id y símbolo (la clase sí cambia).
       const parche: MetadatosEditables = {
         nombre: nombre.trim(),
+        clase,
         moneda: moneda.trim().toUpperCase(),
         sector: sector && !esRF ? sector : undefined,
         geografia: geografia || undefined,
@@ -168,7 +169,14 @@ export function FormActivo({
         </div>
         <div className="campo">
           <label>{t('comunes.clase')}</label>
-          <select value={clase} onChange={(e) => setClase(e.target.value as ClaseActivo)} disabled={!!existente}>
+          <select
+            value={clase}
+            onChange={(e) => {
+              // Cambiar la clase reinicia el sector (su vocabulario es por clase).
+              setClase(e.target.value as ClaseActivo)
+              setSector('')
+            }}
+          >
             {CLASES.map((c) => (
               <option key={c} value={c}>
                 {t(`clases.${c}`)}

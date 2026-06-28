@@ -2,11 +2,14 @@
  * Edición de activos y operaciones como transformaciones puras del documento:
  * cada función recibe el documento y devuelve uno NUEVO, sin mutar el original.
  *
- * Integridad: `id`, `simbolo` y `clase` de un activo son estructurales (claves y
- * ruta de valuación) y nunca se editan aquí. El recálculo de posiciones, costo
- * promedio y KPIs no vive en este módulo: se deriva en `calcularPortafolio` a
- * partir de las operaciones, así que editar/eliminar una operación basta para
- * que todo se recalcule de forma determinista en el siguiente render.
+ * Integridad: `id` y `simbolo` de un activo son su identidad (claves) y nunca se
+ * editan aquí. La `clase` SÍ es editable (para corregir una mala clasificación);
+ * cambiarla solo re-agrupa y re-valúa en el siguiente render, no corrompe datos
+ * (las operaciones son agnósticas a la clase y el histórico no guarda la clase).
+ * Quien cambie la clase debe enviar también un `sector`/`rentaFija` coherentes.
+ * El recálculo de posiciones, costo promedio y KPIs no vive en este módulo: se
+ * deriva en `calcularPortafolio` a partir de las operaciones, así que editar/
+ * eliminar una operación basta para que todo se recalcule de forma determinista.
  */
 
 import type { Activo, Operacion } from './tipos'
@@ -14,15 +17,17 @@ import type { DocumentoStore } from '../state/documento'
 
 /**
  * Metadatos de un activo que se pueden editar libremente. Excluye por diseño
- * `id`, `simbolo` y `clase`. Un valor `undefined` presente limpia el campo
- * opcional (ej. quitar el sector).
+ * `id` y `simbolo` (la identidad del activo). Un valor `undefined` presente
+ * limpia el campo opcional (ej. quitar el sector). `clase` es editable: al
+ * cambiarla conviene mandar también `sector`/`rentaFija` coherentes.
  */
 export type MetadatosEditables = Partial<
-  Pick<Activo, 'nombre' | 'moneda' | 'sector' | 'geografia' | 'etiquetaIds' | 'liquido' | 'rentaFija'>
+  Pick<Activo, 'nombre' | 'clase' | 'moneda' | 'sector' | 'geografia' | 'etiquetaIds' | 'liquido' | 'rentaFija'>
 >
 
 const CLAVES_EDITABLES = [
   'nombre',
+  'clase',
   'moneda',
   'sector',
   'geografia',
@@ -44,10 +49,9 @@ function conMetadatos(activo: Activo, parche: MetadatosEditables): Activo {
   return {
     ...activo,
     ...soloEditables(parche),
-    // Forzados al final: jamás cambian aunque el parche intente sobrescribirlos.
+    // Forzados al final: la identidad jamás cambia aunque el parche la traiga.
     id: activo.id,
     simbolo: activo.simbolo,
-    clase: activo.clase,
   }
 }
 
