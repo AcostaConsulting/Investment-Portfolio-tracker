@@ -286,3 +286,43 @@ describe('valuación y totales', () => {
     expect(totales.gananciaTotal).toBeCloseTo(500, 2)
   })
 })
+
+describe('flujo de efectivo con importeEfectivo (dividendo/interés)', () => {
+  it('un dividendo con importeEfectivo no toca la cantidad y suma el ingreso por su importe', () => {
+    const ops = [
+      op({ activoId: 'aapl', tipo: 'compra', fecha: '2026-01-01', cantidad: 10, precioUnitario: 100, moneda: 'USD', tipoCambio: 17 }),
+      op({ activoId: 'aapl', tipo: 'dividendo', fecha: '2026-03-01', cantidad: 0, precioUnitario: 0, importeEfectivo: 0.53, moneda: 'USD', tipoCambio: 18 }),
+    ]
+    const { posiciones, totales } = calcularPortafolio(
+      [accionUsd],
+      ops,
+      contexto({ precios: { aapl: { precio: 100, moneda: 'USD' } }, tiposCambio: { USD: 18 } }),
+    )
+    const p = posiciones[0]!
+    expect(p.cantidad).toBe(10) // el dividendo NO infló la posición
+    expect(p.ingresosBase).toBeCloseTo(0.53 * 18, 6) // ingreso = importeEfectivo × tc
+    expect(totales.ingresos).toBeCloseTo(0.53 * 18, 2)
+  })
+
+  it('el interés con importeEfectivo cuenta como ingreso en base sin cantidad', () => {
+    const ops = [
+      op({ activoId: 'amxl', tipo: 'compra', fecha: '2026-01-01', cantidad: 100, precioUnitario: 10 }),
+      op({ activoId: 'amxl', tipo: 'interes', fecha: '2026-03-01', cantidad: 0, precioUnitario: 0, importeEfectivo: 42, moneda: 'MXN', tipoCambio: 1 }),
+    ]
+    const { posiciones } = calcularPortafolio([accionMxn], ops, contexto({ precios: { amxl: { precio: 10, moneda: 'MXN' } } }))
+    const p = posiciones[0]!
+    expect(p.cantidad).toBe(100)
+    expect(p.ingresosBase).toBeCloseTo(42, 6)
+  })
+
+  it('un dividendo legacy (sin importeEfectivo) sigue derivando de cantidad × precio', () => {
+    const ops = [
+      op({ activoId: 'amxl', tipo: 'compra', fecha: '2026-01-01', cantidad: 100, precioUnitario: 10 }),
+      op({ activoId: 'amxl', tipo: 'dividendo', fecha: '2026-03-01', cantidad: 100, precioUnitario: 1, moneda: 'MXN', tipoCambio: 1 }),
+    ]
+    const { posiciones } = calcularPortafolio([accionMxn], ops, contexto({ precios: { amxl: { precio: 10, moneda: 'MXN' } } }))
+    const p = posiciones[0]!
+    expect(p.cantidad).toBe(100) // dividendo legacy tampoco toca la cantidad
+    expect(p.ingresosBase).toBeCloseTo(100, 6) // 100 × 1
+  })
+})

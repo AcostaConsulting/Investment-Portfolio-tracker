@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { editarMetadatosActivo, editarOperacion, eliminarOperacion, type MetadatosEditables } from './edicionActivo'
+import { editarMetadatosActivo, editarOperacion, eliminarOperacion, eliminarOperaciones, type MetadatosEditables } from './edicionActivo'
 import { calcularPortafolio } from './portafolio'
 import { documentoInicial, type DocumentoStore } from '../state/documento'
 import type { Activo, ContextoValuacion, Operacion } from './tipos'
@@ -158,6 +158,33 @@ describe('eliminarOperacion', () => {
     const r = eliminarOperacion(d, venta.id)
     expect(d.operaciones).toHaveLength(2)
     expect(r.operaciones).toHaveLength(1)
+  })
+})
+
+describe('eliminarOperaciones (borrado masivo)', () => {
+  it('elimina todas las operaciones cuyos ids se pasan, en una sola pasada', () => {
+    const a = op({ tipo: 'compra', fecha: '2026-01-10', cantidad: 10, precioUnitario: 1 })
+    const b = op({ tipo: 'compra', fecha: '2026-01-11', cantidad: 20, precioUnitario: 1 })
+    const c = op({ tipo: 'compra', fecha: '2026-01-12', cantidad: 30, precioUnitario: 1 })
+    const d = doc([apple], [a, b, c])
+    const r = eliminarOperaciones(d, [a.id, c.id])
+    expect(r.operaciones.map((o) => o.id)).toEqual([b.id])
+  })
+
+  it('ignora ids inexistentes y no muta el documento original', () => {
+    const a = op({ tipo: 'compra', fecha: '2026-01-10', cantidad: 10, precioUnitario: 1 })
+    const b = op({ tipo: 'compra', fecha: '2026-01-11', cantidad: 20, precioUnitario: 1 })
+    const d = doc([apple], [a, b])
+    const r = eliminarOperaciones(d, [a.id, 'no-existe'])
+    expect(d.operaciones).toHaveLength(2) // original intacto
+    expect(r.operaciones.map((o) => o.id)).toEqual([b.id])
+  })
+
+  it('con lista vacía devuelve las mismas operaciones', () => {
+    const a = op({ tipo: 'compra', fecha: '2026-01-10', cantidad: 10, precioUnitario: 1 })
+    const d = doc([apple], [a])
+    const r = eliminarOperaciones(d, [])
+    expect(r.operaciones.map((o) => o.id)).toEqual([a.id])
   })
 })
 

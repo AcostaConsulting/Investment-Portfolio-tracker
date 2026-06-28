@@ -30,6 +30,7 @@ export function Movimientos() {
   const doc = useApp((s) => s.doc)
   const plan = useApp((s) => s.plan)
   const eliminarOperacion = useApp((s) => s.eliminarOperacion)
+  const eliminarOperaciones = useApp((s) => s.eliminarOperaciones)
   const portafolio = usePortafolio()
 
   const [editando, setEditando] = useState<Operacion | 'nueva' | undefined>()
@@ -39,6 +40,7 @@ export function Movimientos() {
   const [filtroTipo, setFiltroTipo] = useState('')
   const [desde, setDesde] = useState('')
   const [hasta, setHasta] = useState('')
+  const [seleccion, setSeleccion] = useState<Set<string>>(new Set())
 
   const porActivo = useMemo(() => new Map(doc.activos.map((a) => [a.id, a])), [doc.activos])
 
@@ -65,6 +67,31 @@ export function Movimientos() {
 
   function confirmaEliminar(id: string) {
     if (window.confirm(t('movimientos.confirmaEliminar'))) eliminarOperacion(id)
+  }
+
+  function alternarSeleccion(id: string) {
+    setSeleccion((prev) => {
+      const sig = new Set(prev)
+      if (sig.has(id)) sig.delete(id)
+      else sig.add(id)
+      return sig
+    })
+  }
+
+  const idsFiltradas = useMemo(() => filtradas.map((o) => o.id), [filtradas])
+  const todasSeleccionadas = idsFiltradas.length > 0 && idsFiltradas.every((id) => seleccion.has(id))
+
+  function alternarTodas() {
+    setSeleccion(todasSeleccionadas ? new Set() : new Set(idsFiltradas))
+  }
+
+  function confirmaEliminarSeleccion() {
+    const ids = [...seleccion]
+    if (ids.length === 0) return
+    if (window.confirm(t('movimientos.confirmaEliminarVarios', { cantidad: ids.length }))) {
+      eliminarOperaciones(ids)
+      setSeleccion(new Set())
+    }
   }
 
   const puedeExportar = tieneCapacidad(plan, 'exportarExcel')
@@ -127,6 +154,24 @@ export function Movimientos() {
         </span>
       </div>
 
+      {seleccion.size > 0 && (
+        <div
+          className="tarjeta"
+          style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '10px 16px' }}
+        >
+          <span className="mini" style={{ fontWeight: 600 }}>
+            {t('movimientos.seleccionados', { cantidad: seleccion.size })}
+          </span>
+          <button className="btn btn-peligro btn-mini" style={{ marginLeft: 'auto' }} onClick={confirmaEliminarSeleccion}>
+            <Icono nombre="basura" tam={14} />
+            {t('movimientos.eliminarSeleccionados', { cantidad: seleccion.size })}
+          </button>
+          <button className="btn btn-fantasma btn-mini" onClick={() => setSeleccion(new Set())}>
+            {t('movimientos.cancelarSeleccion')}
+          </button>
+        </div>
+      )}
+
       <div className="tabla-marco">
         {filtradas.length === 0 ? (
           <div className="vacio">
@@ -142,6 +187,14 @@ export function Movimientos() {
           <table className="libro">
             <thead>
               <tr>
+                <th style={{ width: 32 }}>
+                  <input
+                    type="checkbox"
+                    checked={todasSeleccionadas}
+                    onChange={alternarTodas}
+                    title={t('movimientos.seleccionarTodas')}
+                  />
+                </th>
                 <th>{t('comunes.fecha')}</th>
                 <th>{t('comunes.activo')}</th>
                 <th>{t('comunes.tipo')}</th>
@@ -154,9 +207,19 @@ export function Movimientos() {
             <tbody>
               {filtradas.map((op) => {
                 const activo = porActivo.get(op.activoId)
-                const importe = op.cantidad * op.precioUnitario * op.tipoCambio
+                const esEfectivo = op.importeEfectivo !== undefined
+                const importe = esEfectivo
+                  ? op.importeEfectivo! * op.tipoCambio
+                  : op.cantidad * op.precioUnitario * op.tipoCambio
                 return (
-                  <tr key={op.id}>
+                  <tr key={op.id} className={seleccion.has(op.id) ? 'fila-seleccionada' : ''}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={seleccion.has(op.id)}
+                        onChange={() => alternarSeleccion(op.id)}
+                      />
+                    </td>
                     <td className="cifra mini">{formatoFecha(op.fecha)}</td>
                     <td>
                       <span style={{ fontWeight: 600 }}>{activo?.simbolo ?? '?'}</span>
@@ -169,8 +232,8 @@ export function Movimientos() {
                     <td>
                       <span className={`chip ${CHIP_TIPO[op.tipo]}`}>{t(`operaciones.${op.tipo}`)}</span>
                     </td>
-                    <td className="num cifra">{formatoCantidad(op.cantidad)}</td>
-                    <td className="num cifra">{formatoMoneda(op.precioUnitario, op.moneda)}</td>
+                    <td className="num cifra">{esEfectivo ? '—' : formatoCantidad(op.cantidad)}</td>
+                    <td className="num cifra">{esEfectivo ? '—' : formatoMoneda(op.precioUnitario, op.moneda)}</td>
                     <td className="num">
                       <Cifra valor={importe} moneda={doc.ajustes.monedaBase} />
                     </td>

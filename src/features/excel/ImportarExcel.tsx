@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Modal } from '../../ui/Modal'
 import { useApp } from '../../state/store'
+import { USD_MXN_DISPLAY } from '../../config/planes'
 import type { Activo, Operacion } from '../../engine/tipos'
 import {
   adivinarMapeo,
@@ -35,9 +36,11 @@ export function ImportarExcel({ abierto, alCerrar }: { abierto: boolean; alCerra
   const ETIQUETA_CAMPO: Record<CampoImport, string> = {
     fecha: t('comunes.fecha'),
     simbolo: t('comunes.simbolo'),
+    clase: t('comunes.clase'),
     tipo: t('comunes.tipo'),
     cantidad: t('comunes.cantidad'),
     precio: t('comunes.precio'),
+    importe: t('comunes.importe'),
     moneda: t('comunes.moneda'),
     tipoCambio: t('formOperacion.tipoCambio', { base: doc.ajustes.monedaBase }),
     comision: t('comunes.comision'),
@@ -82,9 +85,21 @@ export function ImportarExcel({ abierto, alCerrar }: { abierto: boolean; alCerra
     () => new Set(doc.activos.map((a) => a.simbolo.toUpperCase())),
     [doc.activos],
   )
+  // La moneda extranjera se infiere del encabezado de precio (ej. "Precio unit. (USD)").
+  const monedaExtranjera = useMemo(() => {
+    if (mapeo.precio === undefined || !hoja) return 'USD'
+    const m = /\(([A-Za-z]{3})\)/.exec(hoja.encabezados[mapeo.precio] ?? '')
+    return m ? m[1]!.toUpperCase() : 'USD'
+  }, [hoja, mapeo.precio])
   const resultado = useMemo(
-    () => (hoja ? convertirFilas(hoja.filas, mapeo, doc.ajustes.monedaBase, simbolosExistentes) : undefined),
-    [hoja, mapeo, doc.ajustes.monedaBase, simbolosExistentes],
+    () =>
+      hoja
+        ? convertirFilas(hoja.filas, mapeo, doc.ajustes.monedaBase, simbolosExistentes, {
+            monedaExtranjera,
+            tcPorDefecto: USD_MXN_DISPLAY,
+          })
+        : undefined,
+    [hoja, mapeo, doc.ajustes.monedaBase, simbolosExistentes, monedaExtranjera],
   )
 
   function importar() {
@@ -97,7 +112,7 @@ export function ImportarExcel({ abierto, alCerrar }: { abierto: boolean; alCerra
         id: crypto.randomUUID(),
         simbolo,
         nombre: simbolo,
-        clase: 'accion',
+        clase: primera.clase ?? 'accion',
         moneda: primera.moneda,
       }
       activosNuevos.push(activo)
@@ -112,6 +127,7 @@ export function ImportarExcel({ abierto, alCerrar }: { abierto: boolean; alCerra
       precioUnitario: f.precioUnitario,
       moneda: f.moneda,
       tipoCambio: f.tipoCambio,
+      ...(f.importeEfectivo !== undefined ? { importeEfectivo: f.importeEfectivo } : {}),
       ...(f.comision !== undefined ? { comision: f.comision } : {}),
       ...(f.nota !== undefined ? { nota: f.nota } : {}),
     }))

@@ -40,6 +40,9 @@ export function FormOperacion({
   const [fecha, setFecha] = useState(existente?.fecha ?? hoyIso())
   const [cantidad, setCantidad] = useState(existente ? String(existente.cantidad) : '')
   const [precio, setPrecio] = useState(existente ? String(existente.precioUnitario) : '')
+  const [importe, setImporte] = useState(
+    existente?.importeEfectivo !== undefined ? String(existente.importeEfectivo) : '',
+  )
   const [moneda, setMoneda] = useState(existente?.moneda ?? '')
   const [tipoCambio, setTipoCambio] = useState(existente ? String(existente.tipoCambio) : '')
   const [comision, setComision] = useState(existente?.comision ? String(existente.comision) : '')
@@ -93,11 +96,17 @@ export function FormOperacion({
     const e: Record<string, string> = {}
     if (!activoId) e.activoId = t('formOperacion.sinActivos')
     if (!esFechaIsoValida(fecha)) e.fecha = t('formOperacion.fechaInvalida')
-    const c = Number(cantidad)
-    if (cantidad === '' || Number.isNaN(c)) e.cantidad = t('formOperacion.requerido')
-    else if (esAjuste ? c === 0 : c <= 0) e.cantidad = esAjuste ? t('formOperacion.distintoDeCero') : t('formOperacion.mayorQueCero')
-    const p = Number(precio)
-    if (precio === '' || Number.isNaN(p) || p < 0) e.precio = t('formOperacion.requerido')
+    if (esEfectivo) {
+      // Dividendo/interés: solo importa el importe en efectivo.
+      const im = Number(importe)
+      if (importe === '' || Number.isNaN(im) || im <= 0) e.importe = t('formOperacion.mayorQueCero')
+    } else {
+      const c = Number(cantidad)
+      if (cantidad === '' || Number.isNaN(c)) e.cantidad = t('formOperacion.requerido')
+      else if (esAjuste ? c === 0 : c <= 0) e.cantidad = esAjuste ? t('formOperacion.distintoDeCero') : t('formOperacion.mayorQueCero')
+      const p = Number(precio)
+      if (precio === '' || Number.isNaN(p) || p < 0) e.precio = t('formOperacion.requerido')
+    }
     if (!moneda.trim()) e.moneda = t('formOperacion.requerido')
     const tc = Number(tipoCambio)
     if (tipoCambio === '' || !(tc > 0)) e.tipoCambio = t('formOperacion.mayorQueCero')
@@ -113,10 +122,11 @@ export function FormOperacion({
       activoId,
       tipo,
       fecha,
-      cantidad: Number(cantidad),
-      precioUnitario: Number(precio),
+      cantidad: esEfectivo ? 0 : Number(cantidad),
+      precioUnitario: esEfectivo ? 0 : Number(precio),
       moneda: moneda.trim().toUpperCase(),
       tipoCambio: Number(tipoCambio),
+      ...(esEfectivo ? { importeEfectivo: Number(importe) } : {}),
       ...(comision !== '' && Number(comision) > 0 ? { comision: Number(comision) } : {}),
       ...(nota.trim() ? { nota: nota.trim() } : {}),
     }
@@ -184,35 +194,54 @@ export function FormOperacion({
             <input className={errores.fecha ? 'invalido' : ''} type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
             {errores.fecha && <span className="error">{errores.fecha}</span>}
           </div>
-          <div className="campo">
-            <label>{t('comunes.cantidad')}</label>
-            <input
-              className={errores.cantidad ? 'invalido' : ''}
-              type="number"
-              step="any"
-              value={cantidad}
-              onChange={(e) => setCantidad(e.target.value)}
-            />
-            {errores.cantidad ? (
-              <span className="error">{errores.cantidad}</span>
-            ) : esAjuste ? (
-              <span className="ayuda">{t('formOperacion.cantidadAjusteAyuda')}</span>
-            ) : esEfectivo ? (
-              <span className="ayuda">{t('formOperacion.importeAyudaEfectivo')}</span>
-            ) : null}
-          </div>
-          <div className="campo">
-            <label>{t('formOperacion.precioUnitario')}</label>
-            <input
-              className={errores.precio ? 'invalido' : ''}
-              type="number"
-              step="any"
-              min="0"
-              value={precio}
-              onChange={(e) => setPrecio(e.target.value)}
-            />
-            {errores.precio && <span className="error">{errores.precio}</span>}
-          </div>
+          {esEfectivo ? (
+            <div className="campo">
+              <label>{t('comunes.importe')}</label>
+              <input
+                className={errores.importe ? 'invalido' : ''}
+                type="number"
+                step="any"
+                min="0"
+                value={importe}
+                onChange={(e) => setImporte(e.target.value)}
+              />
+              {errores.importe ? (
+                <span className="error">{errores.importe}</span>
+              ) : (
+                <span className="ayuda">{t('formOperacion.importeAyudaEfectivo')}</span>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="campo">
+                <label>{t('comunes.cantidad')}</label>
+                <input
+                  className={errores.cantidad ? 'invalido' : ''}
+                  type="number"
+                  step="any"
+                  value={cantidad}
+                  onChange={(e) => setCantidad(e.target.value)}
+                />
+                {errores.cantidad ? (
+                  <span className="error">{errores.cantidad}</span>
+                ) : esAjuste ? (
+                  <span className="ayuda">{t('formOperacion.cantidadAjusteAyuda')}</span>
+                ) : null}
+              </div>
+              <div className="campo">
+                <label>{t('formOperacion.precioUnitario')}</label>
+                <input
+                  className={errores.precio ? 'invalido' : ''}
+                  type="number"
+                  step="any"
+                  min="0"
+                  value={precio}
+                  onChange={(e) => setPrecio(e.target.value)}
+                />
+                {errores.precio && <span className="error">{errores.precio}</span>}
+              </div>
+            </>
+          )}
           <div className="campo">
             <label>{t('comunes.moneda')}</label>
             <input

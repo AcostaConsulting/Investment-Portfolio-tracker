@@ -21,6 +21,7 @@ import {
   editarMetadatosActivo as editarMetadatosActivoDoc,
   editarOperacion as editarOperacionDoc,
   eliminarOperacion as eliminarOperacionDoc,
+  eliminarOperaciones as eliminarOperacionesDoc,
   type MetadatosEditables,
 } from '../engine/edicionActivo'
 import { planEfectivo, validarLicencia, type EstadoLicencia } from '../licencias/validar'
@@ -56,6 +57,8 @@ export interface EstadoApp {
   editarMetadatosActivo(activoId: string, parche: MetadatosEditables): void
   guardarOperacion(operacion: Operacion): void
   eliminarOperacion(id: string): void
+  /** Borrado masivo: elimina varias operaciones en una sola mutación (un solo guardado). */
+  eliminarOperaciones(ids: string[]): void
   fijarPrecio(activoId: string, precio: PrecioActual): void
   fijarTipoCambio(moneda: string, valor: number): void
   actualizarAjustes(parcial: Partial<Ajustes>): void
@@ -142,6 +145,10 @@ export const useApp = create<EstadoApp>((set, get) => ({
 
   eliminarOperacion(id) {
     get().mutarDoc((doc) => eliminarOperacionDoc(doc, id))
+  },
+
+  eliminarOperaciones(ids) {
+    get().mutarDoc((doc) => eliminarOperacionesDoc(doc, ids))
   },
 
   fijarPrecio(activoId, precio) {

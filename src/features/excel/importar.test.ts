@@ -30,6 +30,37 @@ describe('adivinarMapeo', () => {
     const mapeo = adivinarMapeo(['Foo', 'Bar'])
     expect(Object.keys(mapeo)).toHaveLength(0)
   })
+
+  it('mapea los encabezados reales de la plantilla (clase, monto, precio (USD), tipo cambio op.)', () => {
+    const mapeo = adivinarMapeo([
+      'Fecha',
+      'Activo',
+      'Clase',
+      'Tipo',
+      'Cantidad',
+      'Precio unit. (USD)',
+      'Monto MXN',
+      'Tipo cambio op.',
+      'Costo MXN equivalente',
+      'Comisión USD',
+      'Comisión MXN',
+      'Notas',
+    ])
+    expect(mapeo).toMatchObject({
+      fecha: 0,
+      simbolo: 1,
+      clase: 2,
+      tipo: 3,
+      cantidad: 4,
+      precio: 5,
+      importe: 6,
+      tipoCambio: 7,
+      comision: 9, // Comisión USD (la primera columna de comisión)
+      nota: 11,
+    })
+    // 'Costo MXN equivalente' (8) no debe colarse en ningún campo.
+    expect(Object.values(mapeo)).not.toContain(8)
+  })
 })
 
 describe('aFechaIso', () => {
@@ -143,5 +174,119 @@ describe('convertirFilas', () => {
       new Set(),
     )
     expect(validas[0]?.precioUnitario).toBeCloseTo(1_250_000.5, 6)
+  })
+})
+
+describe('convertirFilas con clase, monto e importe (plantilla real)', () => {
+  // Orden de columnas de la plantilla real: sin columna de moneda.
+  const mapeoReal: Mapeo = {
+    fecha: 0,
+    simbolo: 1,
+    clase: 2,
+    tipo: 3,
+    cantidad: 4,
+    precio: 5,
+    importe: 6,
+    tipoCambio: 7,
+  }
+
+  it('Fix 1: lee la clase del Excel y la normaliza (Renta Fija → renta_fija)', () => {
+    const { validas } = convertirFilas(
+      [
+        ['2025-08-01', 'KO', 'Accion', 'Compra', 1, 78, 1366.56, 17.52],
+        ['2025-08-01', 'ETH', 'Cripto', 'Compra', 0.1, 2800, 4900, 17.5],
+        ['2025-08-01', 'CETES', 'Renta Fija', 'Compra', 200, 1, 200, 1],
+      ],
+      mapeoReal,
+      'MXN',
+      new Set(),
+    )
+    expect(validas.map((v) => v.clase)).toEqual(['accion', 'cripto', 'renta_fija'])
+  })
+
+  it('Fix 2: cripto comprado con MXN sin precio unitario → deriva el precio USD, no se omite', () => {
+    const { validas, errores } = convertirFilas(
+      [['2025-07-06', 'ETH', 'Cripto', 'Compra', 0.03068501, null, 1500, 17.508228867567755]],
+      mapeoReal,
+      'MXN',
+      new Set(),
+    )
+    expect(errores).toEqual([])
+    expect(validas).toHaveLength(1)
+    const v = validas[0]!
+    expect(v.moneda).toBe('USD')
+    expect(v.tipoCambio).toBeCloseTo(17.508228867567755, 6)
+    // precio_USD = (monto_MXN / tc) / cantidad
+    expect(v.precioUnitario).toBeCloseTo(1500 / 17.508228867567755 / 0.03068501, 4)
+    // y el costo en base reconstruye el monto MXN original
+    expect(v.cantidad * v.precioUnitario * v.tipoCambio).toBeCloseTo(1500, 2)
+  })
+
+  it('Fix 2: si el tipo de cambio viene null usa el TC por defecto', () => {
+    const { validas, errores } = convertirFilas(
+      [['2025-07-06', 'BTC', 'Cripto', 'Compra', 0.001, null, 1850, null]],
+      mapeoReal,
+      'MXN',
+      new Set(),
+      { tcPorDefecto: 18.5 },
+    )
+    expect(errores).toEqual([])
+    expect(validas[0]!.tipoCambio).toBe(18.5)
+    expect(validas[0]!.precioUnitario).toBeCloseTo(1850 / 18.5 / 0.001, 4)
+  })
+
+  it('Fix 3: staking con cantidad ya provista y sin precio entra con precio 0', () => {
+    const { validas, errores } = convertirFilas(
+      [['2025-09-01', 'SOL', 'Cripto', 'Staking', 0.0072693869, null, 0, null]],
+      mapeoReal,
+      'MXN',
+      new Set(),
+    )
+    expect(errores).toEqual([])
+    expect(validas).toHaveLength(1)
+    expect(validas[0]!.tipo).toBe('staking')
+    expect(validas[0]!.cantidad).toBeCloseTo(0.0072693869, 9)
+    expect(validas[0]!.precioUnitario).toBe(0)
+  })
+
+  it('Fix 3: staking con cantidad 0 sí se rechaza (no hay nada que registrar)', () => {
+    const { validas, errores } = convertirFilas(
+      [['2025-09-01', 'SOL', 'Cripto', 'Staking', 0, null, 0, null]],
+      mapeoReal,
+      'MXN',
+      new Set(),
+    )
+    expect(validas).toHaveLength(0)
+    expect(errores[0]?.error).toBe('cantidad')
+  })
+
+  it('Fix 4: dividendo con cantidad 0 e importe → importeEfectivo, cantidad 0, no se omite', () => {
+    const { validas, errores } = convertirFilas(
+      [['2025-09-15', 'KO', 'Accion', 'Dividendo', 0, null, 9.54, 18.0033]],
+      mapeoReal,
+      'MXN',
+      new Set(),
+    )
+    expect(errores).toEqual([])
+    expect(validas).toHaveLength(1)
+    const v = validas[0]!
+    expect(v.tipo).toBe('dividendo')
+    expect(v.cantidad).toBe(0)
+    expect(v.precioUnitario).toBe(0)
+    expect(v.moneda).toBe('USD')
+    // importeEfectivo en moneda; ingreso en base = importeEfectivo × tc = monto MXN
+    expect(v.importeEfectivo).toBeCloseTo(9.54 / 18.0033, 6)
+    expect(v.importeEfectivo! * v.tipoCambio).toBeCloseTo(9.54, 4)
+  })
+
+  it('Fix 4: dividendo sin importe se rechaza', () => {
+    const { validas, errores } = convertirFilas(
+      [['2025-09-15', 'KO', 'Accion', 'Dividendo', 0, null, null, 18]],
+      mapeoReal,
+      'MXN',
+      new Set(),
+    )
+    expect(validas).toHaveLength(0)
+    expect(errores[0]?.error).toBe('importe')
   })
 })

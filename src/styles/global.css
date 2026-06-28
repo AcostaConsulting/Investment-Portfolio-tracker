@@ -486,6 +486,10 @@ table.libro tbody tr:hover {
   background: var(--accent-subtle);
 }
 
+table.libro tbody tr.fila-seleccionada {
+  background: var(--accent-subtle);
+}
+
 table.libro .num,
 table.libro th.num {
   text-align: right;

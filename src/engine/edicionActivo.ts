@@ -78,3 +78,10 @@ export function editarOperacion(doc: DocumentoStore, operacion: Operacion): Docu
 export function eliminarOperacion(doc: DocumentoStore, operacionId: string): DocumentoStore {
   return { ...doc, operaciones: doc.operaciones.filter((o) => o.id !== operacionId) }
 }
+
+/** Elimina en una sola pasada todas las operaciones cuyos ids estén en `operacionIds`. */
+export function eliminarOperaciones(doc: DocumentoStore, operacionIds: string[]): DocumentoStore {
+  if (operacionIds.length === 0) return doc
+  const aBorrar = new Set(operacionIds)
+  return { ...doc, operaciones: doc.operaciones.filter((o) => !aBorrar.has(o.id)) }
+}

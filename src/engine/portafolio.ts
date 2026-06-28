@@ -168,8 +168,10 @@ export function acumularOperaciones(
       }
       default: {
         if (OPERACIONES_EFECTIVO.has(op.tipo)) {
-          // Dividendo/interés: efectivo, no toca la cantidad.
-          acc.ingresosBase += importeBase - comisionBase
+          // Dividendo/interés: efectivo, no toca la cantidad. El ingreso sale del
+          // importe explícito si está, o se deriva de cantidad × precio (legacy).
+          const ingresoBruto = op.importeEfectivo !== undefined ? op.importeEfectivo * tc : importeBase
+          acc.ingresosBase += ingresoBruto - comisionBase
         } else if (OPERACIONES_EN_ESPECIE.has(op.tipo)) {
           // Staking/airdrop/recompensa: entra cantidad a valor de mercado capturado;
           // ese valor es a la vez ingreso y costo (base gravable y de P&L futura).

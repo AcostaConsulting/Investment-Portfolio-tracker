@@ -56,6 +56,13 @@ export interface Operacion {
   tipoCambio: number
   /** Comisión en `moneda` (siempre ≥ 0). */
   comision?: number
+  /**
+   * Importe en efectivo (en `moneda`) para operaciones de flujo de efectivo
+   * (dividendo/interés). Si está presente, sustituye a `cantidad × precioUnitario`
+   * para calcular el ingreso. Permite registrar un dividendo con `cantidad = 0`
+   * sin anular el ingreso.
+   */
+  importeEfectivo?: number
   nota?: string
 }
 
