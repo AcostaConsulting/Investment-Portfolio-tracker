@@ -1,11 +1,40 @@
 import { app, BrowserWindow, ipcMain, session, shell } from 'electron'
 import path from 'node:path'
-import { cargar, guardar, respaldar } from './almacen'
+import { cargar, guardar, respaldar, leerZoom, guardarZoom } from './almacen'
 import { obtenerJson } from './red'
 import { abrirArchivo, guardarArchivo, type FiltroArchivo } from './dialogo'
 import { buscar, descargar, instalarAlCerrar } from './actualizador'
 
 const esDev = !!process.env.VITE_DEV_SERVER_URL
+
+// Zoom de la interfaz (Ctrl/Cmd con +, − y 0). Preferencia local de la máquina.
+const ZOOM_MIN = 0.5
+const ZOOM_MAX = 2
+const ZOOM_PASO = 0.1
+let zoomFactor = 1
+const clampZoom = (f: number): number => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(f * 10) / 10))
+
+function aplicarZoom(ventana: BrowserWindow, f: number): void {
+  zoomFactor = clampZoom(f)
+  ventana.webContents.setZoomFactor(zoomFactor)
+  void guardarZoom(zoomFactor)
+}
+
+function configurarZoom(ventana: BrowserWindow): void {
+  // Aplicar el zoom guardado en cada carga (también tras un HMR en dev).
+  ventana.webContents.on('did-finish-load', () => ventana.webContents.setZoomFactor(zoomFactor))
+  ventana.webContents.on('before-input-event', (evento, input) => {
+    if (input.type !== 'keyDown' || !(input.control || input.meta)) return
+    const actual = ventana.webContents.getZoomFactor()
+    let nuevo: number | undefined
+    if (input.key === '=' || input.key === '+') nuevo = actual + ZOOM_PASO
+    else if (input.key === '-') nuevo = actual - ZOOM_PASO
+    else if (input.key === '0') nuevo = 1
+    if (nuevo === undefined) return
+    evento.preventDefault() // evita el doble-zoom del menú/navegador integrado
+    aplicarZoom(ventana, nuevo)
+  })
+}
 
 function crearVentana() {
   const ventana = new BrowserWindow({
@@ -26,6 +55,7 @@ function crearVentana() {
   })
 
   ventana.once('ready-to-show', () => ventana.show())
+  configurarZoom(ventana)
 
   // Cualquier intento de abrir un enlace externo va al navegador del sistema,
   // nunca dentro de la app.
@@ -84,7 +114,9 @@ function registrarIpc() {
   ipcMain.handle('actualizador:instalar', () => instalarAlCerrar())
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  zoomFactor = clampZoom((await leerZoom()) ?? 1)
+
   // CSP estricta solo en producción (en dev, Vite necesita inline scripts para HMR).
   if (!esDev) {
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {

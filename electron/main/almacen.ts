@@ -9,6 +9,7 @@ import { copyFile, mkdir, readdir, readFile, rename, rm, writeFile } from 'node:
 import path from 'node:path'
 
 const NOMBRE_DATOS = 'datos.json'
+const NOMBRE_PREFS = 'prefs.json'
 const CARPETA_RESPALDOS = 'respaldos'
 // 10 respaldos: cada copia es un JSON pequeño y el respaldo se hace como mucho
 // una vez cada 10 min (ver index.ts), así que 10 cubre varios días de historia
@@ -21,6 +22,31 @@ function rutaDatos(): string {
 
 function carpetaRespaldos(): string {
   return path.join(app.getPath('userData'), CARPETA_RESPALDOS)
+}
+
+function rutaPrefs(): string {
+  return path.join(app.getPath('userData'), NOMBRE_PREFS)
+}
+
+/**
+ * Preferencias locales de la máquina (no del portafolio): viven aparte de
+ * `datos.json` para no competir con su guardado ni viajar con un respaldo.
+ */
+export async function leerZoom(): Promise<number | undefined> {
+  try {
+    const prefs = JSON.parse(await readFile(rutaPrefs(), 'utf8'))
+    return typeof prefs?.zoom === 'number' ? prefs.zoom : undefined
+  } catch {
+    return undefined
+  }
+}
+
+export async function guardarZoom(zoom: number): Promise<void> {
+  try {
+    await writeFile(rutaPrefs(), JSON.stringify({ zoom }), 'utf8')
+  } catch {
+    // Mejor-esfuerzo: si no se puede persistir el zoom no es crítico.
+  }
 }
 
 /**
