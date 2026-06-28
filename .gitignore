@@ -15,3 +15,9 @@ secrets/
 handoff.md
 HANDOFF-LICENCIAS.md
 GUIA-LICENCIAS.md
+
+# Registro local de licencias-regalo (a quién se regaló qué) — NUNCA publicar
+licencias-regaladas.csv
+
+# Archivos Excel con datos del portafolio (importación/exportación) — NUNCA publicar
+*.xlsx
