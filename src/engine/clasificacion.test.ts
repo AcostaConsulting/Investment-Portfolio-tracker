@@ -89,6 +89,18 @@ describe('calcularDiversificacion', () => {
     expect(v.porGeografia.map((r) => r.clave)).toEqual(['eua', 'mexico', SIN_CLASIFICAR])
   })
 
+  it('agrupa la renta fija bajo su propia clase en el sector (no "sin clasificar")', () => {
+    const v = calcularDiversificacion(
+      [
+        posicion({ id: 'tech', clase: 'accion', sector: 'technology', valor: 600 }),
+        posicion({ id: 'cetes', clase: 'renta_fija', valor: 400 }),
+      ],
+      [],
+    )
+    expect(v.porSector.find((r) => r.clave === 'renta_fija')).toEqual({ clave: 'renta_fija', valor: 400, pct: 40 })
+    expect(v.porSector.some((r) => r.clave === SIN_CLASIFICAR)).toBe(false)
+  })
+
   it('las etiquetas llevan su nombre visible y excluyen lo sin etiquetar', () => {
     const v = calcularDiversificacion(posiciones, etiquetas)
     expect(v.porEtiqueta).toEqual([{ clave: 'riesgo', nombre: 'Alto riesgo', valor: 200, pct: 20 }])

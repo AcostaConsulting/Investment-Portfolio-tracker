@@ -52,6 +52,8 @@ export function GraficaDiversificacion({
   function nombreDe(r: Rebanada): string {
     if (r.clave === SIN_CLASIFICAR) return t('clasificacion.sinClasificar')
     if (dimension === 'clase') return t(`clases.${r.clave as 'accion' | 'cripto' | 'renta_fija'}`)
+    // La renta fija aparece como una "sección" propia en la dimensión sector.
+    if (dimension === 'sector' && r.clave === 'renta_fija') return t('clases.renta_fija')
     if (dimension === 'sector' && (SECTORES_ACCION as readonly string[]).includes(r.clave))
       return t(`clasificacion.sectores.${r.clave as (typeof SECTORES_ACCION)[number]}`)
     if (dimension === 'geografia' && (GEOGRAFIAS as readonly string[]).includes(r.clave))

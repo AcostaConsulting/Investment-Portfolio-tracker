@@ -64,7 +64,11 @@ export function calcularDiversificacion(
   return {
     valorTotal: redondear(total, 2),
     porClase: agrupar(abiertas, total, (p) => p.activo.clase),
-    porSector: agrupar(abiertas, total, (p) => p.activo.sector ?? SIN_CLASIFICAR),
+    // La renta fija no usa sectores (GICS/cripto); se agrupa bajo su propia clase
+    // en vez de caer en "sin clasificar".
+    porSector: agrupar(abiertas, total, (p) =>
+      p.activo.sector ?? (p.activo.clase === 'renta_fija' ? 'renta_fija' : SIN_CLASIFICAR),
+    ),
     porGeografia: agrupar(abiertas, total, (p) => p.activo.geografia ?? SIN_CLASIFICAR),
     porEtiqueta: porEtiqueta.filter((r) => r.clave !== SIN_CLASIFICAR),
   }
