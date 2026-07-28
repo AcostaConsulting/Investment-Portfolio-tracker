@@ -48,10 +48,14 @@ e1499b9  fix(landing): apuntar enlaces al repo nuevo Investment-Portfolio-tracke
 
 1. ~~Subir los commits a GitHub~~ - HECHO (push del 27 jun en adelante).
 2. ~~Reinstalar la app~~ - HECHO. Version vigente:
-   - Instalador: `release\TrackerPortafolio-Setup-0.2.1.exe`
-   - SHA-256: `9A3F82B0F79C60352BA2B3FA2BE72D8755DACB50FBC2C1F6E1D80BA4D4F0F049`
+   - Instalador: `TrackerPortafolio-Setup-0.2.2.exe`
+   - SHA-256: `9F48F6976FDC7B02173DCDA52AC174744380D376EB6FB5CAF60C0777237F05DA`
+   - (v0.2.1 quedo superada: `9A3F82B0F79C60352BA2B3FA2BE72D8755DACB50FBC2C1F6E1D80BA4D4F0F049` - traia el auto-update roto, ver punto 4.)
 3. ~~Licencias - desplegar el Worker~~ - HECHO. Flujo end-to-end verificado: compra en Gumroad -> webhook -> Worker genera licencia -> Resend envia email -> usuario activa en la app.
-4. ~~Publicar version~~ - HECHO. v0.2.1 publicada en GitHub Releases y en los 3 productos de Gumroad (Pro, Premium, Lifetime).
+4. ~~Publicar version~~ - HECHO (28 jul 2026). v0.2.2 publicada en GitHub Releases (SHA arriba, verificado contra el binario real: `latest.yml` responde 200 y coincide en sha512/size).
+   - v0.2.1 tenia dos bugs de auto-update, ya arreglados en v0.2.2: (a) `autoInstallOnAppQuit` se encendia despues de descargar y nunca instalaba nada; (b) el workflow de release creaba DOS releases para el mismo tag y GitHub servia el que no traia el instalador (404). Detalle tecnico completo en `handoff.md` §2.1-2.3.
+   - 🔲 Falta reemplazar el `.exe` en los 3 productos de Gumroad (Pro, Premium, Lifetime) - ahi sigue el de v0.2.1.
+   - 🔲 Falta avisar a los promotores con licencia-regalo que reinstalen a mano una vez: su copia trae el auto-update roto y no se actualiza sola ni a v0.2.2.
    - Nota: la carpeta `landing/` se elimino del repo el 27 jul 2026. La landing oficial vive unicamente en Odoo (`acostaconsulting.odoo.com/patrimo-portfolio-tracker`). No se usa GitHub Pages.
 5. Backlog de mejoras (opcional, no urgente): ver **`MEJORAS.md`**.
 ---
