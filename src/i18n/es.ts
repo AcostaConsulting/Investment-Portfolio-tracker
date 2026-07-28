@@ -5,7 +5,7 @@
  */
 export const es = {
   app: {
-    nombre: 'Tracker de Portafolio',
+    nombre: 'Patrimo',
     lema: 'Tus inversiones, en tu equipo.',
   },
   nav: {

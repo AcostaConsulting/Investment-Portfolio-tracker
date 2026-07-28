@@ -44,7 +44,9 @@ function crearVentana() {
     minHeight: 640,
     show: false,
     backgroundColor: '#0F172A',
-    title: 'Tracker de Portafolio',
+    // Solo la marca visible. productName (package.json / electron-builder.yml)
+    // NO se toca: define userData y la carpeta de instalación.
+    title: 'Patrimo',
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.cjs'),
       contextIsolation: true,

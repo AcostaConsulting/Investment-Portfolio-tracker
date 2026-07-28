@@ -2,7 +2,7 @@ import type { Diccionario } from './es'
 
 export const ja: Diccionario = {
   app: {
-    nombre: 'ポートフォリオトラッカー',
+    nombre: 'Patrimo',
     lema: 'あなたの投資を、あなたのPCに。',
   },
   nav: {
