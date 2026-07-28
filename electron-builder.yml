@@ -31,3 +31,4 @@ publish:
   provider: github
   owner: AcostaConsulting
   repo: Investment-Portfolio-tracker
+  releaseType: release
