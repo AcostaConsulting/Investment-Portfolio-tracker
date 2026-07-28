@@ -4,10 +4,9 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Icono } from '../../ui/Icono'
 import { abrirExterno } from '../../lib/externo'
-import { URL_CONTACTO, URL_PLAYLIST_VIDEOS } from '../../config/planes'
+import { URL_CONTACTO, URL_PLAYLIST_VIDEOS, VIDEOS_TUTORIALES } from '../../config/planes'
 
 const PASOS_INICIO = ['paso1', 'paso2', 'paso3', 'paso4'] as const
-const VIDEOS = ['video1', 'video2', 'video3', 'video4', 'video5'] as const
 const FAQS = [1, 2, 3, 4, 5, 6, 7, 8] as const
 
 export function Ayuda() {
@@ -82,11 +81,30 @@ export function Ayuda() {
             {t('ayuda.verVideos')}
           </button>
         </div>
+        <p className="mini suave" style={{ margin: '0 0 12px' }}>
+          {t('ayuda.videosEnEspanol')}
+        </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
-          {VIDEOS.map((video) => (
-            <div key={video} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {VIDEOS_TUTORIALES.map(({ llave, url }, i) => (
+            <button
+              key={llave}
+              onClick={() => abrirExterno(url)}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 6,
+                padding: 0,
+                background: 'none',
+                border: 'none',
+                textAlign: 'left',
+                cursor: 'pointer',
+                font: 'inherit',
+                color: 'inherit',
+              }}
+            >
               <div
                 style={{
+                  width: '100%',
                   aspectRatio: '16/9',
                   borderRadius: 'var(--radio)',
                   background: 'linear-gradient(135deg, var(--accent-subtle), var(--surface-2))',
@@ -99,15 +117,10 @@ export function Ayuda() {
               >
                 <Icono nombre="flecha" tam={26} />
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                <span className="mini" style={{ fontWeight: 600 }}>
-                  {t(`ayuda.${video}`)}
-                </span>
-                <span className="chip ambar" style={{ fontSize: 10 }}>
-                  {t('ayuda.proximamente')}
-                </span>
-              </div>
-            </div>
+              <span className="mini" style={{ fontWeight: 600 }}>
+                {i + 1}. {t(`ayuda.${llave}`)}
+              </span>
+            </button>
           ))}
         </div>
       </div>
