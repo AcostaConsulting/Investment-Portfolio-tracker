@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Icono } from '../../ui/Icono'
 import { abrirExterno } from '../../lib/externo'
-import { URL_CONTACTO } from '../../config/planes'
+import { URL_CONTACTO, URL_PLAYLIST_VIDEOS } from '../../config/planes'
 
 const PASOS_INICIO = ['paso1', 'paso2', 'paso3', 'paso4'] as const
 const VIDEOS = ['video1', 'video2', 'video3', 'video4', 'video5'] as const
@@ -66,8 +66,21 @@ export function Ayuda() {
 
       {/* ---------- Videos ---------- */}
       <div className="tarjeta">
-        <div className="etiqueta" style={{ marginBottom: 12 }}>
-          {t('ayuda.videos')}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 10,
+            flexWrap: 'wrap',
+            marginBottom: 12,
+          }}
+        >
+          <div className="etiqueta">{t('ayuda.videos')}</div>
+          <button className="btn btn-primario btn-mini" onClick={() => abrirExterno(URL_PLAYLIST_VIDEOS)}>
+            <Icono nombre="externo" tam={14} />
+            {t('ayuda.verVideos')}
+          </button>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
           {VIDEOS.map((video) => (

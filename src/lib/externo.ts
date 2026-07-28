@@ -10,6 +10,8 @@ const HOSTS_PERMITIDOS = new Set([
   'acostafconsulting.gumroad.com',
   'acostaconsulting.odoo.com',
   'github.com',
+  // Playlist de tutoriales (ver URL_PLAYLIST_VIDEOS en config/planes.ts).
+  'www.youtube.com',
 ])
 
 export function esUrlPermitida(url: string): boolean {

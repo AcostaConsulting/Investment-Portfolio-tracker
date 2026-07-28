@@ -456,6 +456,7 @@ export const en: Diccionario = {
     paso3: 'Check your positions: average cost, value and P&L are computed for you.',
     paso4: 'Explore Analytics: diversification, alerts and your tax events for the year.',
     videos: 'Videos',
+    verVideos: 'Watch video tutorials',
     proximamente: 'Coming soon',
     video1: 'First steps',
     video2: 'Recording your CETES',

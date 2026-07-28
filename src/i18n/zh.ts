@@ -455,6 +455,7 @@ export const zh: Diccionario = {
     paso3: '查看持仓：平均成本、价值和盈亏自动算好。',
     paso4: '探索“分析”：分散度、提醒和今年的税务事件。',
     videos: '视频',
+    verVideos: '观看视频教程',
     proximamente: '即将推出',
     video1: '入门指南',
     video2: '录入 CETES',

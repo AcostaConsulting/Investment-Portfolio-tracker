@@ -456,6 +456,7 @@ export const fr: Diccionario = {
     paso3: 'Consultez vos positions : coût moyen, valeur et P&L se calculent tout seuls.',
     paso4: 'Explorez Analyse : diversification, alertes et vos événements fiscaux de l’année.',
     videos: 'Vidéos',
+    verVideos: 'Voir les tutoriels vidéo',
     proximamente: 'Bientôt',
     video1: 'Premiers pas',
     video2: 'Saisir vos CETES',

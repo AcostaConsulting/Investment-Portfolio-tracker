@@ -459,6 +459,7 @@ export const es = {
     paso3: 'Mira tus posiciones: costo promedio, valor y P&L se calculan solos.',
     paso4: 'Explora Análisis: diversificación, alertas y tus eventos fiscales del año.',
     videos: 'Videos',
+    verVideos: 'Ver tutoriales en video',
     proximamente: 'Próximamente',
     video1: 'Primeros pasos',
     video2: 'Captura tus CETES',

@@ -456,6 +456,7 @@ export const ja: Diccionario = {
     paso3: '保有資産を確認：平均取得単価・評価額・損益は自動計算。',
     paso4: '「分析」を見る：分散状況、アラート、今年の税務イベント。',
     videos: '動画',
+    verVideos: '動画チュートリアルを見る',
     proximamente: '近日公開',
     video1: 'はじめの一歩',
     video2: 'CETES の記録',

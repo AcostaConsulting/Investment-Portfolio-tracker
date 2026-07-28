@@ -16,3 +16,6 @@ export const URLS_GUMROAD: Record<Exclude<Plan, 'free'>, string> = {
 
 export const URL_CONSULTORIA = 'https://acostaconsulting.odoo.com/appointment/3'
 export const URL_CONTACTO = 'https://acostaconsulting.odoo.com/contactus'
+
+/** Serie de tutoriales T1–T12 en YouTube. El host va en la allowlist de lib/externo.ts. */
+export const URL_PLAYLIST_VIDEOS = 'https://www.youtube.com/playlist?list=PLFxrNvaOljbE'
