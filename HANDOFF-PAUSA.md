@@ -46,15 +46,14 @@ e1499b9  fix(landing): apuntar enlaces al repo nuevo Investment-Portfolio-tracke
 
 ## Pendientes para cuando retomes (en orden)
 
-1. **Subir los commits a GitHub** — `git push -u origin main` (ver arriba).
-2. **Reinstalar la app en tu equipo** para tener los 4 fixes funcionando:
-   - Desinstala "Tracker de Portafolio" (tus datos y tu licencia se conservan).
-   - Instala `release\TrackerPortafolio-Setup-0.1.0.exe`.
-   - SHA-256: `DB690027BC81C18CCF2D3F09AA6D78F3654BDE179766D7D1FDE9E877FDD5733B`
-3. **Licencias — desplegar el Worker** (quedó pendiente de sesiones pasadas): subir la llave correcta a Cloudflare y `wrangler deploy`. Pasos exactos en **`GUIA-LICENCIAS.md`**.
-4. **Publicar versión** (cuando quieras vender): subir el `.exe` a un Release de GitHub en `Investment-Portfolio-tracker` y activar GitHub Pages para la carpeta `landing/`.
-5. **Backlog de mejoras** (opcional, no urgente): ver **`MEJORAS.md`** — top 3 sugerido: reporte fiscal en PDF, gráfica de evolución, recordatorio + respaldo automático.
-
+1. ~~Subir los commits a GitHub~~ - HECHO (push del 27 jun en adelante).
+2. ~~Reinstalar la app~~ - HECHO. Version vigente:
+   - Instalador: `release\TrackerPortafolio-Setup-0.2.1.exe`
+   - SHA-256: `9A3F82B0F79C60352BA2B3FA2BE72D8755DACB50FBC2C1F6E1D80BA4D4F0F049`
+3. ~~Licencias - desplegar el Worker~~ - HECHO. Flujo end-to-end verificado: compra en Gumroad -> webhook -> Worker genera licencia -> Resend envia email -> usuario activa en la app.
+4. ~~Publicar version~~ - HECHO. v0.2.1 publicada en GitHub Releases y en los 3 productos de Gumroad (Pro, Premium, Lifetime).
+   - Nota: la carpeta `landing/` se elimino del repo el 27 jul 2026. La landing oficial vive unicamente en Odoo (`acostaconsulting.odoo.com/patrimo-portfolio-tracker`). No se usa GitHub Pages.
+5. Backlog de mejoras (opcional, no urgente): ver **`MEJORAS.md`**.
 ---
 
 ## Mapa de documentos (dónde está cada cosa)
