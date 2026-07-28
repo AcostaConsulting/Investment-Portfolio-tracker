@@ -4,6 +4,18 @@
 #   npm version patch
 #   git push --follow-tags
 #   → GitHub Actions construye el instalador y lo publica en Releases.
+#
+# 🔴 POR QUÉ ESTE WORKFLOW NO USA `--publish always`
+# electron-builder publicaba por su cuenta, y su publicador hace "buscar o crear
+# el release" del tag **una vez por artefacto, en paralelo**. Cuando dos entran a
+# la vez se crean DOS releases para el mismo tag. GitHub solo puede servir
+# /releases/download/{tag}/ desde uno, así que el instalador quedaba inalcanzable
+# (404) y electron-updater no podía actualizar a nadie. Pasó en TODOS los releases
+# desde v0.1.0. Detalle completo en handoff.md §2.3.
+#
+# Por eso: electron-builder SOLO compila (`--publish never`) y la publicación es un
+# paso posterior y explícito. UN solo actor crea el release, UN solo actor sube los
+# assets. La carrera desaparece por construcción, no por suerte.
 
 name: release
 
@@ -25,6 +37,77 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      - run: npx electron-builder --win --publish always
+
+      # Solo compila. No toca GitHub. Genera en release/: el .exe, su .blockmap y
+      # latest.yml (este último se sigue generando porque electron-builder.yml
+      # conserva el bloque `publish:`; sin él no habría auto-update).
+      - run: npx electron-builder --win --publish never
+
+      - name: Publicar release y subir artefactos
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+
+          # Si ya existe un release para el tag, parar en seco. Re-ejecutar el
+          # workflow sobre un release existente es justo como se llega a estados
+          # ambiguos; mejor fallar y que un humano decida.
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::error::Ya existe un release para $tag. Bórralo antes de re-ejecutar el workflow."
+            exit 1
+          fi
+
+          gh release create "$tag" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$tag" \
+            --notes "Instalador de Patrimo $tag" \
+            release/TrackerPortafolio-Setup-*.exe \
+            release/TrackerPortafolio-Setup-*.exe.blockmap \
+            release/latest.yml
+
+      # Este paso existe para que el chequeo deje de depender de que alguien se
+      # acuerde de hacerlo a mano. Si el release no es utilizable por
+      # electron-updater, el job se pone en rojo.
+      - name: Verificar que el release es utilizable
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+
+          # 1. Un solo release por tag. Este es el bug de §2.3 medido de frente.
+          copias=$(gh api "repos/${GITHUB_REPOSITORY}/releases" --paginate \
+            --jq "[.[] | select(.tag_name == \"${tag}\")] | length")
+          echo "Releases con tag ${tag}: ${copias}"
+          if [ "$copias" != "1" ]; then
+            echo "::error::Se esperaba exactamente 1 release para ${tag}, hay ${copias}. Con tags duplicados GitHub sirve las descargas desde uno solo y el auto-update se rompe (handoff.md §2.3)."
+            exit 1
+          fi
+
+          # 2. Los archivos que lee electron-updater responden 200 en la ruta por
+          #    tag. El nombre del .exe sale del artefacto realmente compilado, NO
+          #    del tag: la versión la manda package.json y los dos pueden no
+          #    coincidir (p.ej. al probar el workflow con un tag desechable).
+          exe=$(basename release/TrackerPortafolio-Setup-*.exe)
+          base="https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}"
+
+          for archivo in "latest.yml" "$exe"; do
+            code=""
+            # Los assets recién subidos pueden tardar un momento en servirse.
+            for intento in 1 2 3 4 5; do
+              code=$(curl -sSL -o /dev/null -w '%{http_code}' "${base}/${archivo}" || echo "000")
+              [ "$code" = "200" ] && break
+              echo "  intento ${intento}: ${archivo} -> HTTP ${code}, reintentando…"
+              sleep 5
+            done
+            echo "${archivo} -> HTTP ${code}"
+            if [ "$code" != "200" ]; then
+              echo "::error::${archivo} no responde 200 en ${base}. El release NO es utilizable por electron-updater."
+              exit 1
+            fi
+          done
+
+          echo "OK: un solo release y sus archivos se sirven correctamente."

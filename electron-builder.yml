@@ -27,6 +27,13 @@ nsis:
 
 # Auto-update: electron-updater lee estos datos desde GitHub Releases.
 # Si el repo cambia, actualiza owner/repo aquí.
+#
+# ⚠️ Este bloque NO significa que electron-builder publique. Desde el 28 jul el
+# workflow lo corre con `--publish never` y sube los artefactos aparte, porque su
+# publicador creaba dos releases por tag (handoff.md §2.3). El bloque se queda
+# porque de él depende que se genere `latest.yml`, sin el cual no hay auto-update.
+# `releaseType` queda inerte en CI; solo aplicaría si alguien corriera
+# `electron-builder --publish always` a mano.
 publish:
   provider: github
   owner: AcostaConsulting
