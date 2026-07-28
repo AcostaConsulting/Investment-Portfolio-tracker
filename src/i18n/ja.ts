@@ -303,7 +303,9 @@ export const ja: Diccionario = {
     actualizacionDisponible: 'バージョン {{version}} が利用可能',
     actualizacionNinguna: 'すでに最新バージョンです',
     actualizacionDescargar: 'ダウンロード',
-    actualizacionLista: 'ダウンロード済み。あなたがアプリを閉じたときにインストールされます。',
+    actualizacionLista:
+      'ダウンロード済み。再起動するとアプリが自動的に閉じて開き直し、更新が完了します。そのままにすれば、あなたがアプリを閉じたときにインストールされます。',
+    actualizacionReiniciar: '今すぐ再起動',
     notificaciones: '通知',
     notificacionesAlertas: '価格アラートが発動したら通知する',
     notificacionesAlertasAyuda: 'アプリを開いている間、価格が下限または上限に達したらシステム通知を表示します。',

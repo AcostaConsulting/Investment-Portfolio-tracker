@@ -306,7 +306,9 @@ export const es = {
     actualizacionDisponible: 'Versión {{version}} disponible',
     actualizacionNinguna: 'Ya tienes la última versión',
     actualizacionDescargar: 'Descargar',
-    actualizacionLista: 'Descargada. Se instalará cuando tú cierres la app.',
+    actualizacionLista:
+      'Descargada. Al reiniciar, la app se cierra y se vuelve a abrir sola ya actualizada. Si prefieres, se instala cuando tú la cierres.',
+    actualizacionReiniciar: 'Reiniciar ahora',
     notificaciones: 'Notificaciones',
     notificacionesAlertas: 'Avisar cuando se dispare una alerta de precio',
     notificacionesAlertasAyuda: 'Muestra una notificación del sistema cuando un precio toca tu piso o techo, con la app abierta.',

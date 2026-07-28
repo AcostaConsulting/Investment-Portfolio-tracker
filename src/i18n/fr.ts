@@ -303,7 +303,9 @@ export const fr: Diccionario = {
     actualizacionDisponible: 'Version {{version}} disponible',
     actualizacionNinguna: 'Vous avez déjà la dernière version',
     actualizacionDescargar: 'Télécharger',
-    actualizacionLista: 'Téléchargée. Elle s’installera quand VOUS fermerez l’app.',
+    actualizacionLista:
+      'Téléchargée. Si vous redémarrez, l’app se ferme et se rouvre seule, déjà à jour. Sinon, elle s’installera quand VOUS la fermerez.',
+    actualizacionReiniciar: 'Redémarrer maintenant',
     notificaciones: 'Notifications',
     notificacionesAlertas: 'Avertir quand une alerte de prix se déclenche',
     notificacionesAlertasAyuda: 'Affiche une notification système quand un prix atteint votre plancher ou plafond, l’app ouverte.',

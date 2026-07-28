@@ -3,7 +3,7 @@ import path from 'node:path'
 import { cargar, guardar, respaldar, leerZoom, guardarZoom } from './almacen'
 import { obtenerJson } from './red'
 import { abrirArchivo, guardarArchivo, type FiltroArchivo } from './dialogo'
-import { buscar, descargar, instalarAlCerrar } from './actualizador'
+import { buscar, descargar, instalarAhora } from './actualizador'
 
 const esDev = !!process.env.VITE_DEV_SERVER_URL
 
@@ -111,7 +111,7 @@ function registrarIpc() {
 
   ipcMain.handle('actualizador:buscar', () => buscar())
   ipcMain.handle('actualizador:descargar', () => descargar())
-  ipcMain.handle('actualizador:instalar', () => instalarAlCerrar())
+  ipcMain.handle('actualizador:instalar', () => instalarAhora())
 }
 
 app.whenReady().then(async () => {

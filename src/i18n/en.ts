@@ -303,7 +303,9 @@ export const en: Diccionario = {
     actualizacionDisponible: 'Version {{version}} available',
     actualizacionNinguna: 'You already have the latest version',
     actualizacionDescargar: 'Download',
-    actualizacionLista: 'Downloaded. It will install when YOU close the app.',
+    actualizacionLista:
+      'Downloaded. If you restart, the app closes and reopens on its own, already updated. Otherwise it installs when YOU close it.',
+    actualizacionReiniciar: 'Restart now',
     notificaciones: 'Notifications',
     notificacionesAlertas: 'Notify when a price alert triggers',
     notificacionesAlertasAyuda: 'Shows a system notification when a price hits your floor or ceiling, with the app open.',

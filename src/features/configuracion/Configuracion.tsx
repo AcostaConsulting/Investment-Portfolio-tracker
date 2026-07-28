@@ -369,12 +369,8 @@ function Actualizador() {
   async function descargar() {
     setEstado('descargando')
     const r = await window.api?.actualizador.descargar()
-    if (r?.estado === 'lista') {
-      await window.api?.actualizador.instalarAlCerrar()
-      setEstado('lista')
-    } else {
-      setEstado({ error: r?.error ?? t('errores.redFallo') })
-    }
+    if (r?.estado === 'lista') setEstado('lista')
+    else setEstado({ error: r?.error ?? t('errores.redFallo') })
   }
 
   return (
@@ -392,7 +388,17 @@ function Actualizador() {
         </>
       )}
       {estado === 'descargando' && <span className="mini suave">{t('configuracion.actualizando')}</span>}
-      {estado === 'lista' && <span className="mini positivo">{t('configuracion.actualizacionLista')}</span>}
+      {estado === 'lista' && (
+        <>
+          <span className="mini positivo">{t('configuracion.actualizacionLista')}</span>
+          <button
+            className="btn btn-primario btn-mini"
+            onClick={() => void window.api?.actualizador.instalarAhora()}
+          >
+            {t('configuracion.actualizacionReiniciar')}
+          </button>
+        </>
+      )}
       {typeof estado === 'object' && 'error' in estado && (
         <span className="mini" style={{ color: 'var(--loss)' }}>
           {estado.error}

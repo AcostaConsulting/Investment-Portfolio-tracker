@@ -30,7 +30,7 @@ const api = {
   actualizador: {
     buscar: (): Promise<unknown> => ipcRenderer.invoke('actualizador:buscar'),
     descargar: (): Promise<unknown> => ipcRenderer.invoke('actualizador:descargar'),
-    instalarAlCerrar: (): Promise<void> => ipcRenderer.invoke('actualizador:instalar'),
+    instalarAhora: (): Promise<void> => ipcRenderer.invoke('actualizador:instalar'),
   },
 }
 

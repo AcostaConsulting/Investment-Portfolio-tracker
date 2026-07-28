@@ -53,7 +53,7 @@ export interface ApiPreload {
   actualizador: {
     buscar(): Promise<EstadoActualizador>
     descargar(): Promise<EstadoActualizador>
-    instalarAlCerrar(): Promise<void>
+    instalarAhora(): Promise<void>
   }
 }
 
