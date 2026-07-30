@@ -79,8 +79,26 @@ jobs:
           tag="${GITHUB_REF_NAME}"
 
           # 1. Un solo release por tag. Este es el bug de §2.3 medido de frente.
-          copias=$(gh api "repos/${GITHUB_REPOSITORY}/releases" --paginate \
-            --jq "[.[] | select(.tag_name == \"${tag}\")] | length")
+          #
+          # Con reintentos, y no por gusto: el endpoint de LISTA es eventualmente
+          # consistente. En v0.2.5 este paso consultó ~1 segundo después de publicar,
+          # recibió 0 y puso el job en rojo con el release perfectamente sano. Un
+          # verificador que grita en falso termina ignorado — justo lo que este paso
+          # existe para evitar (§12.6).
+          #
+          # El `awk` suma las líneas porque `--paginate` con `--jq` aplica el filtro
+          # UNA VEZ POR PÁGINA y emite un número por página: con más de 30 releases
+          # esto devolvía "1\n0" y fallaba siempre.
+          copias=""
+          for intento in 1 2 3 4 5; do
+            copias=$(gh api "repos/${GITHUB_REPOSITORY}/releases" --paginate \
+              --jq "[.[] | select(.tag_name == \"${tag}\")] | length" \
+              | awk '{s+=$1} END {print s+0}')
+            [ "$copias" = "1" ] && break
+            echo "  intento ${intento}: releases con tag ${tag} = ${copias}, reintentando…"
+            sleep 5
+          done
+
           echo "Releases con tag ${tag}: ${copias}"
           if [ "$copias" != "1" ]; then
             echo "::error::Se esperaba exactamente 1 release para ${tag}, hay ${copias}. Con tags duplicados GitHub sirve las descargas desde uno solo y el auto-update se rompe (handoff.md §2.3)."
