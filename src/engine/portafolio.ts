@@ -14,6 +14,7 @@ import { OPERACIONES_EFECTIVO, OPERACIONES_EN_ESPECIE } from './tipos'
 import { compararPorFecha } from './fechas'
 import { aMonedaBase, redondear } from './dinero'
 import { valuarRentaFija, type ValuacionRentaFija } from './rentaFija'
+import { abiertasDe, asignacionPorClase, pctDelTotal, valorRepartible } from './asignacion'
 
 export interface Posicion {
   activo: Activo
@@ -214,12 +215,10 @@ export function calcularPortafolio(
   }
 
   const posiciones: Posicion[] = []
-  let valorTotal = 0
   let costoTotal = 0
   let pnlRealizado = 0
   let ingresos = 0
   let comisiones = 0
-  const porClase: Record<string, { valor: number; pct: number }> = {}
 
   for (const activo of activos) {
     const ops = porActivo.get(activo.id) ?? []
@@ -248,27 +247,25 @@ export function calcularPortafolio(
       if (!acc.monedaMixta) posicion.precioPromedioNativo = acc.costoNativo / acc.cantidad
 
       valuarPosicion(posicion, acc, contexto, advertencias)
-      valorTotal += posicion.valorBase ?? 0
       costoTotal += acc.costoBase
-
-      const clase = activo.clase
-      const entrada = (porClase[clase] ??= { valor: 0, pct: 0 })
-      entrada.valor += posicion.valorBase ?? 0
     }
 
     posiciones.push(posicion)
   }
 
-  for (const entrada of Object.values(porClase)) {
-    entrada.pct = valorTotal > 0 ? redondear((entrada.valor / valorTotal) * 100, 2) : 0
-    entrada.valor = redondear(entrada.valor, 2)
-  }
+  // El reparto necesita el total, así que va en un segundo paso. La fórmula
+  // —quién participa, la base y el redondeo— vive en `asignacion.ts` y es la
+  // misma que usa `calcularDiversificacion` (§13.3).
+  const abiertas = abiertasDe(posiciones)
+  const valorTotal = valorRepartible(abiertas)
 
-  // El peso solo se puede calcular con el total ya conocido, igual que porClase.
-  for (const posicion of posiciones) {
-    if (posicion.cantidad > 0) {
-      posicion.pesoPct = valorTotal > 0 ? redondear(((posicion.valorBase ?? 0) / valorTotal) * 100, 2) : 0
-    }
+  const porClase: Record<string, { valor: number; pct: number }> = Object.fromEntries(
+    asignacionPorClase(abiertas, valorTotal).map((r) => [r.clave, { valor: r.valor, pct: r.pct }]),
+  )
+
+  // El peso de cada posición es la misma cuenta, sin agrupar.
+  for (const posicion of abiertas) {
+    posicion.pesoPct = pctDelTotal(posicion.valorBase ?? 0, valorTotal)
   }
 
   const pnlNoRealizado = valorTotal - costoTotal

@@ -1,20 +1,26 @@
 /**
  * Diversificación del portafolio en cuatro dimensiones:
  * clase, sector, geografía y etiqueta. Puro: posiciones → rebanadas.
+ *
+ * El reparto en sí (qué posiciones participan, la base y el redondeo del %)
+ * vive en `asignacion.ts`, compartido con `calcularPortafolio` — ver §13.3.
+ * Aquí solo se decide QUÉ clave le toca a cada posición en cada dimensión.
  */
 
 import type { Posicion } from './portafolio'
 import type { Etiqueta } from '../state/documento'
 import { redondear } from './dinero'
+import {
+  abiertasDe,
+  agruparPorValor,
+  asignacionPorClase,
+  valorRepartible,
+  SIN_CLASIFICAR,
+  type Rebanada,
+} from './asignacion'
 
-export interface Rebanada {
-  /** Clave estable de la dimensión ('technology', 'mexico', id de etiqueta…). */
-  clave: string
-  /** Nombre listo para mostrar cuando la clave no es traducible (etiquetas). */
-  nombre?: string
-  valor: number
-  pct: number
-}
+// Re-exportados para no obligar a los consumidores a saber que se mudaron.
+export { SIN_CLASIFICAR, type Rebanada }
 
 export interface VistaDiversificacion {
   /** Valor total de las posiciones abiertas (base de los %). */
@@ -25,51 +31,27 @@ export interface VistaDiversificacion {
   porEtiqueta: Rebanada[]
 }
 
-export const SIN_CLASIFICAR = 'sin_clasificar'
-
-function agrupar(
-  abiertas: Posicion[],
-  total: number,
-  claveDe: (p: Posicion) => string[] | string,
-): Rebanada[] {
-  const montos = new Map<string, number>()
-  for (const p of abiertas) {
-    const claves = claveDe(p)
-    const lista = Array.isArray(claves) ? (claves.length > 0 ? claves : [SIN_CLASIFICAR]) : [claves]
-    for (const clave of lista) {
-      montos.set(clave, (montos.get(clave) ?? 0) + (p.valorBase ?? 0))
-    }
-  }
-  return [...montos.entries()]
-    .map(([clave, valor]) => ({
-      clave,
-      valor: redondear(valor, 2),
-      pct: total > 0 ? redondear((valor / total) * 100, 2) : 0,
-    }))
-    .sort((a, b) => b.valor - a.valor)
-}
-
 export function calcularDiversificacion(
   posiciones: Posicion[],
   etiquetas: Etiqueta[],
 ): VistaDiversificacion {
-  const abiertas = posiciones.filter((p) => p.cantidad > 0)
-  const total = abiertas.reduce((s, p) => s + (p.valorBase ?? 0), 0)
+  const abiertas = abiertasDe(posiciones)
+  const total = valorRepartible(abiertas)
 
-  const porEtiqueta = agrupar(abiertas, total, (p) => p.activo.etiquetaIds ?? []).map((r) => ({
+  const porEtiqueta = agruparPorValor(abiertas, total, (p) => p.activo.etiquetaIds ?? []).map((r) => ({
     ...r,
     nombre: etiquetas.find((e) => e.id === r.clave)?.nombre ?? r.clave,
   }))
 
   return {
     valorTotal: redondear(total, 2),
-    porClase: agrupar(abiertas, total, (p) => p.activo.clase),
+    porClase: asignacionPorClase(abiertas, total),
     // La renta fija no usa sectores (GICS/cripto); se agrupa bajo su propia clase
     // en vez de caer en "sin clasificar".
-    porSector: agrupar(abiertas, total, (p) =>
+    porSector: agruparPorValor(abiertas, total, (p) =>
       p.activo.sector ?? (p.activo.clase === 'renta_fija' ? 'renta_fija' : SIN_CLASIFICAR),
     ),
-    porGeografia: agrupar(abiertas, total, (p) => p.activo.geografia ?? SIN_CLASIFICAR),
+    porGeografia: agruparPorValor(abiertas, total, (p) => p.activo.geografia ?? SIN_CLASIFICAR),
     porEtiqueta: porEtiqueta.filter((r) => r.clave !== SIN_CLASIFICAR),
   }
 }
