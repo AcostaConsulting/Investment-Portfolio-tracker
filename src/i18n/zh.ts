@@ -405,6 +405,8 @@ export const zh: Diccionario = {
   },
   excel: {
     exportar: '导出到 Excel',
+    exportarPosiciones: '导出持仓',
+    exportarPosicionesAyuda: '仅生成包含持仓表的 Excel 文件',
     importar: '从 Excel 导入',
     exportando: '正在生成文件…',
     exportado: 'Excel 已保存',

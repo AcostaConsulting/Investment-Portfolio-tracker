@@ -406,6 +406,8 @@ export const ja: Diccionario = {
   },
   excel: {
     exportar: 'Excel へエクスポート',
+    exportarPosiciones: 'ポジションを書き出す',
+    exportarPosicionesAyuda: 'ポジション一覧のみの Excel ファイルを作成します',
     importar: 'Excel からインポート',
     exportando: 'ファイルを生成中…',
     exportado: 'Excel を保存しました',

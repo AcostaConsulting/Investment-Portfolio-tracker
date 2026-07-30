@@ -409,6 +409,8 @@ export const es = {
   },
   excel: {
     exportar: 'Exportar a Excel',
+    exportarPosiciones: 'Exportar posiciones',
+    exportarPosicionesAyuda: 'Genera un Excel solo con la tabla de posiciones',
     importar: 'Importar desde Excel',
     exportando: 'Generando archivo…',
     exportado: 'Excel guardado',

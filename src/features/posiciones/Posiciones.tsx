@@ -12,6 +12,7 @@ import { tieneCapacidad } from '../../licencias/planes'
 import type { Posicion } from '../../engine/portafolio'
 import { ordenarPosiciones, type ColumnaOrden, type DireccionOrden } from './orden'
 import { AlertaPrecioModal } from '../analisis/AlertaPrecioModal'
+import { exportarExcel } from '../excel/exportar'
 
 export function Posiciones() {
   const { t } = useTranslation()
@@ -19,7 +20,8 @@ export function Posiciones() {
   const plan = useApp((s) => s.plan)
   const fijarPrecio = useApp((s) => s.fijarPrecio)
   const abrirDetalle = useUi((s) => s.abrirDetalle)
-  const { posiciones, totales } = usePortafolio()
+  const portafolio = usePortafolio()
+  const { posiciones, totales } = portafolio
   const base = totales.monedaBase
 
   const [capturando, setCapturando] = useState<Posicion | undefined>()
@@ -27,11 +29,23 @@ export function Posiciones() {
   const [monedaPrecio, setMonedaPrecio] = useState('')
   const [alertaPara, setAlertaPara] = useState<Posicion | undefined>()
   const [verCerradas, setVerCerradas] = useState(false)
+  const [exportando, setExportando] = useState(false)
   const [orden, setOrden] = useState<{ col: ColumnaOrden; dir: DireccionOrden }>({ col: 'valor', dir: 'desc' })
 
   const abiertas = ordenarPosiciones(posiciones.filter((p) => p.cantidad > 0), orden.col, orden.dir)
   const cerradas = posiciones.filter((p) => p.cantidad === 0)
   const puedeAlertas = tieneCapacidad(plan, 'alertasPrecio')
+  const puedeExportar = tieneCapacidad(plan, 'exportarExcel')
+
+  async function alExportar() {
+    setExportando(true)
+    try {
+      // Solo la hoja de Posiciones; el libro completo se exporta desde Movimientos.
+      await exportarExcel(doc, portafolio, t, ['posiciones'])
+    } finally {
+      setExportando(false)
+    }
+  }
 
   function ordenarPor(col: ColumnaOrden) {
     setOrden((o) =>
@@ -61,6 +75,19 @@ export function Posiciones() {
     <div className="vista">
       <div className="vista-cabecera">
         <h1>{t('posiciones.titulo')}</h1>
+        {puedeExportar && (
+          <div className="vista-acciones">
+            <button
+              className="btn"
+              onClick={alExportar}
+              disabled={exportando || abiertas.length === 0}
+              title={t('excel.exportarPosicionesAyuda')}
+            >
+              <Icono nombre="posiciones" tam={14} />
+              {exportando ? t('excel.exportando') : t('excel.exportarPosiciones')}
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="tabla-marco">
@@ -100,9 +127,9 @@ export function Posiciones() {
             </thead>
             <tbody>
               {abiertas.map((p) => {
-                const precioActual = doc.precios[p.activo.id]
+                // El precio y el peso los calcula el motor; aquí solo se formatean.
+                const capturado = doc.precios[p.activo.id]
                 const esRF = p.activo.clase === 'renta_fija'
-                const peso = totales.valorTotal > 0 ? ((p.valorBase ?? 0) / totales.valorTotal) * 100 : 0
                 return (
                   <tr key={p.activo.id}>
                     <td>
@@ -159,11 +186,9 @@ export function Posiciones() {
                           : '—'}
                     </td>
                     <td className="num cifra mini">
-                      {esRF ? (
-                        <span className="suave">—</span>
-                      ) : precioActual ? (
-                        <span title={precioActual.actualizado ? t('posiciones.actualizado', { fecha: formatoFecha(precioActual.actualizado) }) : undefined}>
-                          {formatoMoneda(precioActual.precio, precioActual.moneda)}
+                      {p.precioActual !== undefined ? (
+                        <span title={capturado?.actualizado ? t('posiciones.actualizado', { fecha: formatoFecha(capturado.actualizado) }) : undefined}>
+                          {formatoMoneda(p.precioActual, p.monedaPrecioActual ?? p.activo.moneda)}
                         </span>
                       ) : (
                         <span className="suave">—</span>
@@ -178,7 +203,7 @@ export function Posiciones() {
                     <td className="num">
                       <Porcentaje valor={p.rendimientoPct ?? 0} />
                     </td>
-                    <td className="num cifra suave mini">{peso.toFixed(1)}%</td>
+                    <td className="num cifra suave mini">{(p.pesoPct ?? 0).toFixed(1)}%</td>
                     <td>
                       <div className="fila-acciones">
                         {!esRF && (

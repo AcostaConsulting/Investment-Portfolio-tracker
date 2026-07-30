@@ -326,3 +326,67 @@ describe('flujo de efectivo con importeEfectivo (dividendo/interés)', () => {
     expect(p.ingresosBase).toBeCloseTo(100, 6) // 100 × 1
   })
 })
+
+describe('precio de mercado y peso de cada posición', () => {
+  it('expone el precio vigente en su propia moneda, sin convertir a base', () => {
+    const ops = [
+      op({ activoId: 'aapl', tipo: 'compra', fecha: '2026-01-10', cantidad: 10, precioUnitario: 100, moneda: 'USD', tipoCambio: 17 }),
+    ]
+    const ctx = contexto({ precios: { aapl: { precio: 200, moneda: 'USD' } }, tiposCambio: { USD: 18 } })
+    const p = calcularPortafolio([accionUsd], ops, ctx).posiciones[0]!
+    expect(p.precioActual).toBe(200)
+    expect(p.monedaPrecioActual).toBe('USD')
+    expect(p.valorBase).toBeCloseTo(36000, 6) // 10 · 200 · 18
+  })
+
+  it('deja el precio vigente sin definir cuando no hay precio capturado', () => {
+    const ops = [op({ activoId: 'amxl', tipo: 'compra', fecha: '2026-01-10', cantidad: 100, precioUnitario: 10 })]
+    const p = calcularPortafolio([accionMxn], ops, contexto()).posiciones[0]!
+    expect(p.sinPrecio).toBe(true)
+    expect(p.precioActual).toBeUndefined()
+    expect(p.monedaPrecioActual).toBeUndefined()
+  })
+
+  it('la renta fija nunca expone precio de mercado, ni con precio capturado', () => {
+    const cete: Activo = { id: 'cete', simbolo: 'CETE28', nombre: 'CETES 28d', clase: 'renta_fija', moneda: 'MXN' }
+    const ops = [op({ activoId: 'cete', tipo: 'compra', fecha: '2026-01-10', cantidad: 100, precioUnitario: 10 })]
+    const ctx = contexto({ precios: { cete: { precio: 10.5, moneda: 'MXN' } } })
+    const p = calcularPortafolio([cete], ops, ctx).posiciones[0]!
+    expect(p.precioActual).toBeUndefined()
+    expect(p.monedaPrecioActual).toBeUndefined()
+  })
+
+  it('el peso de cada posición sale del valor total y suma 100%', () => {
+    const ops = [
+      op({ activoId: 'amxl', tipo: 'compra', fecha: '2026-01-10', cantidad: 100, precioUnitario: 10 }),
+      op({ activoId: 'btc', tipo: 'compra', fecha: '2026-01-10', cantidad: 0.5, precioUnitario: 60000, moneda: 'USD', tipoCambio: 17 }),
+    ]
+    const ctx = contexto({
+      precios: { amxl: { precio: 12, moneda: 'MXN' }, btc: { precio: 64000, moneda: 'USD' } },
+      tiposCambio: { USD: 18 },
+    })
+    const { posiciones } = calcularPortafolio([accionMxn, criptoBtc], ops, ctx)
+    // amxl: 1,200 de 577,200 = 0.21% | btc: 576,000 de 577,200 = 99.79%
+    expect(posiciones[0]!.pesoPct).toBeCloseTo(0.21, 2)
+    expect(posiciones[1]!.pesoPct).toBeCloseTo(99.79, 2)
+    expect(posiciones.reduce((s, p) => s + (p.pesoPct ?? 0), 0)).toBeCloseTo(100, 1)
+  })
+
+  it('una posición cerrada no tiene peso', () => {
+    const ops = [
+      op({ activoId: 'amxl', tipo: 'compra', fecha: '2026-01-10', cantidad: 100, precioUnitario: 10 }),
+      op({ activoId: 'amxl', tipo: 'venta', fecha: '2026-02-10', cantidad: 100, precioUnitario: 15 }),
+    ]
+    const p = calcularPortafolio([accionMxn], ops, contexto()).posiciones[0]!
+    expect(p.cantidad).toBe(0)
+    expect(p.pesoPct).toBeUndefined()
+  })
+
+  it('con valor total en cero el peso es cero, no NaN', () => {
+    // Sin precio y con costo cero: la posición existe pero no vale nada.
+    const ops = [op({ activoId: 'amxl', tipo: 'compra', fecha: '2026-01-10', cantidad: 100, precioUnitario: 0 })]
+    const { posiciones, totales } = calcularPortafolio([accionMxn], ops, contexto())
+    expect(totales.valorTotal).toBe(0)
+    expect(posiciones[0]!.pesoPct).toBe(0)
+  })
+})

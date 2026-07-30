@@ -37,6 +37,11 @@ export interface Posicion {
   pnlNoRealizadoBase?: number
   /** % sobre el costo vigente. */
   rendimientoPct?: number
+  /** Precio de mercado vigente, en su propia moneda. No aplica a renta fija. */
+  precioActual?: number
+  monedaPrecioActual?: string
+  /** % que representa esta posición sobre el valor total del portafolio. */
+  pesoPct?: number
   /** Solo renta fija: detalle del devengo. */
   rentaFija?: ValuacionRentaFija
   /** true si el valor usa el costo porque no hay precio disponible. */
@@ -259,6 +264,13 @@ export function calcularPortafolio(
     entrada.valor = redondear(entrada.valor, 2)
   }
 
+  // El peso solo se puede calcular con el total ya conocido, igual que porClase.
+  for (const posicion of posiciones) {
+    if (posicion.cantidad > 0) {
+      posicion.pesoPct = valorTotal > 0 ? redondear(((posicion.valorBase ?? 0) / valorTotal) * 100, 2) : 0
+    }
+  }
+
   const pnlNoRealizado = valorTotal - costoTotal
   const totales: TotalesPortafolio = {
     monedaBase: contexto.monedaBase,
@@ -318,6 +330,13 @@ function valuarPosicion(
     posicion.pnlNoRealizadoBase = 0
     posicion.rendimientoPct = 0
     return
+  }
+
+  // La renta fija se valúa por devengo, nunca por precio de mercado — aunque
+  // llegue aquí por venir sin configuración de renta fija.
+  if (activo.clase !== 'renta_fija') {
+    posicion.precioActual = precio.precio
+    posicion.monedaPrecioActual = precio.moneda
   }
 
   const valorEnMonedaPrecio = acc.cantidad * precio.precio

@@ -406,6 +406,8 @@ export const fr: Diccionario = {
   },
   excel: {
     exportar: 'Exporter vers Excel',
+    exportarPosiciones: 'Exporter les positions',
+    exportarPosicionesAyuda: 'Génère un fichier Excel avec le seul tableau des positions',
     importar: 'Importer depuis Excel',
     exportando: 'Génération du fichier…',
     exportado: 'Excel enregistré',
