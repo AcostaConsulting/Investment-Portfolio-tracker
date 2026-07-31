@@ -20,7 +20,9 @@ export function Ayuda() {
   }, [])
 
   async function copiarReporte() {
-    const reporte = `Tracker de Portafolio v${version || '?'} — ${navigator.platform}\n\n${mensaje}`
+    // El nombre sale de i18n, no de `app.getName()`: ese viene de `productName`,
+    // que sigue siendo el viejo y no se toca (§7 del handoff).
+    const reporte = `${t('app.nombre')} v${version || '?'} — ${navigator.platform}\n\n${mensaje}`
     await navigator.clipboard.writeText(reporte)
     setCopiado(true)
     setTimeout(() => setCopiado(false), 2500)

@@ -6,7 +6,7 @@
 export const es = {
   app: {
     nombre: 'Patrimo',
-    lema: 'Tus inversiones, en tu equipo.',
+    lema: 'Tu portafolio completo. En tu equipo.',
   },
   nav: {
     resumen: 'Resumen',

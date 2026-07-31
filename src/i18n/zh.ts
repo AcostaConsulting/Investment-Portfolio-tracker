@@ -3,7 +3,7 @@ import type { Diccionario } from './es'
 export const zh: Diccionario = {
   app: {
     nombre: 'Patrimo',
-    lema: '你的投资，存在你的电脑里。',
+    lema: '你的完整投资组合，就在你的电脑里。',
   },
   nav: {
     resumen: '总览',

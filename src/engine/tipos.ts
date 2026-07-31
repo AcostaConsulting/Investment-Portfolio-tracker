@@ -1,5 +1,5 @@
 /**
- * Tipos de dominio del Tracker de Portafolio.
+ * Tipos de dominio de Patrimo.
  *
  * Convención: el vocabulario de dominio va en español (es el idioma del
  * producto y del dueño; CETES, ISR y UDI no se traducen). El motor completo

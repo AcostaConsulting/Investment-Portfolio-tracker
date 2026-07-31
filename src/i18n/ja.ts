@@ -3,7 +3,7 @@ import type { Diccionario } from './es'
 export const ja: Diccionario = {
   app: {
     nombre: 'Patrimo',
-    lema: 'あなたの投資を、あなたのPCに。',
+    lema: 'ポートフォリオのすべてを、あなたのPCに。',
   },
   nav: {
     resumen: '概要',

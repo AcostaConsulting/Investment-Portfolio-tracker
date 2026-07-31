@@ -3,7 +3,7 @@ import type { Diccionario } from './es'
 export const en: Diccionario = {
   app: {
     nombre: 'Patrimo',
-    lema: 'Your investments, on your machine.',
+    lema: 'Your whole portfolio. On your machine.',
   },
   nav: {
     resumen: 'Overview',
