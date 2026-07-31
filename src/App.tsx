@@ -81,7 +81,7 @@ export default function App() {
     <div className="app">
       <aside className="lateral">
         <div className="lateral-marca">
-          Tracker de <em>Portafolio</em>
+          <em>{t('app.nombre')}</em>
         </div>
         <div className="lateral-lema mini suave">{t('app.lema')}</div>
         {NAVEGACION.map(({ vista: v, icono }) => (

@@ -167,7 +167,8 @@ export function Resumen({ irA }: { irA: (vista: Vista) => void }) {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {topActivos.map((p) => {
-              const pct = totales.valorTotal > 0 ? ((p.valorBase ?? 0) / totales.valorTotal) * 100 : 0
+              // El peso lo calcula el motor, una sola vez para toda la app (§13.2/§13.3).
+              const pct = p.pesoPct ?? 0
               return (
                 <div key={p.activo.id}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
