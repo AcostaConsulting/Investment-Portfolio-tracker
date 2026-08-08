@@ -156,6 +156,42 @@ describe('libro completo (el que exporta Movimientos)', () => {
     ])
   })
 
+  it('el importe de un dividendo sale de importeEfectivo, no de cantidad × precio', async () => {
+    // El formulario guarda los eventos de efectivo con cantidad y precio en 0
+    // y el monto en `importeEfectivo` (FormOperacion.tsx:125-129), asi que
+    // multiplicarlos daba $0.00 en el Excel que el usuario le lleva a su
+    // contador. Movimientos ya lo hacia bien; el Excel y el Detalle no (§16.7).
+    const doc = docConDatos()
+    doc.operaciones = [
+      ...doc.operaciones,
+      {
+        id: 'op-3',
+        activoId: 'aapl',
+        tipo: 'dividendo',
+        fecha: '2026-03-15',
+        cantidad: 0,
+        precioUnitario: 0,
+        moneda: 'USD',
+        tipoCambio: 18,
+        importeEfectivo: 12,
+      },
+    ]
+    const { libro } = await exportarYLeer(doc)
+    const hoja = libro.getWorksheet('movimientos.titulo')!
+    expect(fila(hoja, 4)).toEqual([
+      '2026-03-15',
+      'AAPL',
+      'operaciones.dividendo',
+      0,
+      0,
+      'USD',
+      18,
+      0,
+      216, // 12 USD × 18, no 0 × 0 × 18
+      '',
+    ])
+  })
+
   it('la hoja de Resumen conserva sus siete renglones', async () => {
     const { libro } = await exportarYLeer(docConDatos())
     const hoja = libro.getWorksheet('nav.resumen')!

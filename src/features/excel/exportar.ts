@@ -12,6 +12,7 @@ import type { TFunction } from 'i18next'
 import type { DocumentoStore } from '../../state/documento'
 import type { ResultadoPortafolio } from '../../engine/portafolio'
 import { compararPorFecha, hoyIso } from '../../engine/fechas'
+import { importeBaseOperacion } from '../../engine/costeo'
 import { textoABase64 } from '../../servicios/respaldo'
 
 const ROSA = 'FFC40F63'
@@ -81,7 +82,7 @@ function agregarMovimientos(
       moneda: op.moneda,
       tc: op.tipoCambio,
       comision: op.comision ?? 0,
-      importe: op.cantidad * op.precioUnitario * op.tipoCambio,
+      importe: importeBaseOperacion(op),
       nota: op.nota ?? '',
     })
   }

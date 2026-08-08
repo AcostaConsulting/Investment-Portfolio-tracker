@@ -9,6 +9,7 @@ import { Cifra, Porcentaje } from '../../ui/Cifra'
 import { Icono } from '../../ui/Icono'
 import { formatoCantidad, formatoFecha, formatoMoneda } from '../../ui/formato'
 import { compararPorFecha } from '../../engine/fechas'
+import { importeBaseOperacion } from '../../engine/costeo'
 import { SECTORES_ACCION, type Operacion, type TipoOperacion } from '../../engine/tipos'
 
 const CHIP_TIPO: Record<TipoOperacion, string> = {
@@ -239,7 +240,7 @@ export function DetalleActivo() {
             </thead>
             <tbody>
               {operaciones.map((op) => {
-                const importe = op.cantidad * op.precioUnitario * op.tipoCambio
+                const importe = importeBaseOperacion(op)
                 return (
                   <tr key={op.id}>
                     <td className="cifra mini">{formatoFecha(op.fecha)}</td>

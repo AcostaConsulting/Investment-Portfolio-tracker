@@ -6,6 +6,7 @@ import { Icono } from '../../ui/Icono'
 import { Cifra } from '../../ui/Cifra'
 import { formatoCantidad, formatoFecha, formatoMoneda } from '../../ui/formato'
 import { compararPorFecha } from '../../engine/fechas'
+import { importeBaseOperacion } from '../../engine/costeo'
 import type { Operacion, TipoOperacion } from '../../engine/tipos'
 import { ImportarExcel } from '../excel/ImportarExcel'
 import { exportarExcel } from '../excel/exportar'
@@ -208,9 +209,7 @@ export function Movimientos() {
               {filtradas.map((op) => {
                 const activo = porActivo.get(op.activoId)
                 const esEfectivo = op.importeEfectivo !== undefined
-                const importe = esEfectivo
-                  ? op.importeEfectivo! * op.tipoCambio
-                  : op.cantidad * op.precioUnitario * op.tipoCambio
+                const importe = importeBaseOperacion(op)
                 return (
                   <tr key={op.id} className={seleccion.has(op.id) ? 'fila-seleccionada' : ''}>
                     <td>

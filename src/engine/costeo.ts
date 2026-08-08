@@ -82,6 +82,24 @@ export interface ResultadoCosteo {
   eventos: EventoCosteo[]
 }
 
+/**
+ * Importe bruto de una operación en moneda base, para MOSTRAR (listas, Excel).
+ *
+ * Los eventos de flujo de efectivo —dividendo, interés— se capturan con
+ * `cantidad` y `precioUnitario` en 0 y el monto en `importeEfectivo`, así que
+ * `cantidad × precio` da cero para ellos. Esa cuenta estaba escrita a mano en
+ * tres vistas y solo una la hacía bien: Movimientos mostraba el dividendo y
+ * el Detalle y el Excel lo mostraban en $0.00 (§16.7).
+ *
+ * Es el importe BRUTO, sin restar comisión: es lo que mueve la operación, no
+ * el ingreso neto. El ingreso neto lo lleva `recorrerCosteo`.
+ */
+export function importeBaseOperacion(op: Operacion): number {
+  return op.importeEfectivo !== undefined
+    ? op.importeEfectivo * op.tipoCambio
+    : op.cantidad * op.precioUnitario * op.tipoCambio
+}
+
 function estadoVacio(): EstadoCosteo {
   return {
     cantidad: 0,
