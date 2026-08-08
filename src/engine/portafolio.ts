@@ -2,6 +2,10 @@
  * Motor de portafolio: a partir de operaciones produce posiciones con costo
  * promedio ponderado, P&L realizado/no realizado, ingresos y asignación.
  *
+ * La fórmula del costo NO vive aquí: vive en `costeo.ts`, compartida con el
+ * reporte fiscal (§16). Este módulo la consume y se ocupa de la valuación,
+ * los totales y el reparto.
+ *
  * Todo el dinero se lleva en DOS pistas:
  * - base: moneda base del usuario, convertida con el tipo de cambio capturado
  *   en cada operación (costo histórico) o el vigente (valuación).
@@ -10,11 +14,10 @@
  */
 
 import type { Activo, Advertencia, ContextoValuacion, Operacion } from './tipos'
-import { OPERACIONES_EFECTIVO, OPERACIONES_EN_ESPECIE } from './tipos'
-import { compararPorFecha } from './fechas'
 import { aMonedaBase, redondear } from './dinero'
 import { valuarRentaFija, type ValuacionRentaFija } from './rentaFija'
 import { abiertasDe, asignacionPorClase, pctDelTotal, valorRepartible } from './asignacion'
+import { recorrerCosteo, type EstadoCosteo } from './costeo'
 
 export interface Posicion {
   activo: Activo
@@ -71,135 +74,6 @@ export interface ResultadoPortafolio {
   advertencias: Advertencia[]
 }
 
-interface Acumulador {
-  cantidad: number
-  costoBase: number
-  costoNativo: number
-  monedaMixta: boolean
-  realizadoBase: number
-  ingresosBase: number
-  comisionesBase: number
-}
-
-function acumuladorVacio(): Acumulador {
-  return {
-    cantidad: 0,
-    costoBase: 0,
-    costoNativo: 0,
-    monedaMixta: false,
-    realizadoBase: 0,
-    ingresosBase: 0,
-    comisionesBase: 0,
-  }
-}
-
-/**
- * Procesa las operaciones de un activo en orden cronológico.
- * Exportada por separado para poder probarla de forma aislada.
- */
-export function acumularOperaciones(
-  activo: Activo,
-  operaciones: Operacion[],
-  advertencias: Advertencia[],
-): Acumulador {
-  const acc = acumuladorVacio()
-  const ordenadas = [...operaciones].sort(compararPorFecha)
-
-  for (const op of ordenadas) {
-    let tc = op.tipoCambio
-    if (!(tc > 0)) {
-      advertencias.push({ codigo: 'sin_tipo_cambio', activoId: activo.id, operacionId: op.id })
-      tc = 1
-    }
-    const esMonedaNativa = op.moneda === activo.moneda
-    if (!esMonedaNativa) acc.monedaMixta = true
-
-    const comision = op.comision ?? 0
-    const comisionBase = comision * tc
-    acc.comisionesBase += comisionBase
-    const importeBase = op.cantidad * op.precioUnitario * tc
-
-    switch (op.tipo) {
-      case 'compra': {
-        acc.cantidad += op.cantidad
-        acc.costoBase += importeBase + comisionBase
-        if (esMonedaNativa) acc.costoNativo += op.cantidad * op.precioUnitario + comision
-        break
-      }
-      case 'venta': {
-        let vendida = op.cantidad
-        if (vendida > acc.cantidad + 1e-12) {
-          advertencias.push({
-            codigo: 'venta_excede_tenencia',
-            activoId: activo.id,
-            operacionId: op.id,
-            detalle: `venta de ${op.cantidad}, tenencia ${acc.cantidad}`,
-          })
-          vendida = acc.cantidad
-        }
-        if (vendida <= 0) break
-        const ppBase = acc.costoBase / acc.cantidad
-        const ppNativo = acc.costoNativo / acc.cantidad
-        acc.realizadoBase += vendida * op.precioUnitario * tc - comisionBase - vendida * ppBase
-        acc.costoBase -= vendida * ppBase
-        acc.costoNativo -= vendida * ppNativo
-        acc.cantidad -= vendida
-        break
-      }
-      case 'ajuste': {
-        if (op.cantidad >= 0) {
-          // Ej. split o corrección al alza: entra cantidad al costo capturado (usualmente 0).
-          acc.cantidad += op.cantidad
-          acc.costoBase += importeBase
-          if (esMonedaNativa) acc.costoNativo += op.cantidad * op.precioUnitario
-        } else {
-          // Retiro sin P&L: reduce cantidad y costo proporcionalmente.
-          let retiro = -op.cantidad
-          if (retiro > acc.cantidad + 1e-12) {
-            advertencias.push({
-              codigo: 'ajuste_excede_tenencia',
-              activoId: activo.id,
-              operacionId: op.id,
-            })
-            retiro = acc.cantidad
-          }
-          if (acc.cantidad > 0) {
-            const proporcion = retiro / acc.cantidad
-            acc.costoBase -= acc.costoBase * proporcion
-            acc.costoNativo -= acc.costoNativo * proporcion
-            acc.cantidad -= retiro
-          }
-        }
-        break
-      }
-      default: {
-        if (OPERACIONES_EFECTIVO.has(op.tipo)) {
-          // Dividendo/interés: efectivo, no toca la cantidad. El ingreso sale del
-          // importe explícito si está, o se deriva de cantidad × precio (legacy).
-          const ingresoBruto = op.importeEfectivo !== undefined ? op.importeEfectivo * tc : importeBase
-          acc.ingresosBase += ingresoBruto - comisionBase
-        } else if (OPERACIONES_EN_ESPECIE.has(op.tipo)) {
-          // Staking/airdrop/recompensa: entra cantidad a valor de mercado capturado;
-          // ese valor es a la vez ingreso y costo (base gravable y de P&L futura).
-          acc.cantidad += op.cantidad
-          acc.costoBase += importeBase
-          if (esMonedaNativa) acc.costoNativo += op.cantidad * op.precioUnitario
-          acc.ingresosBase += importeBase - comisionBase
-        }
-        break
-      }
-    }
-  }
-
-  // Limpia residuos de punto flotante en posiciones cerradas.
-  if (Math.abs(acc.cantidad) < 1e-9) {
-    acc.cantidad = 0
-    acc.costoBase = 0
-    acc.costoNativo = 0
-  }
-  return acc
-}
-
 /** Calcula todas las posiciones y los totales del portafolio. */
 export function calcularPortafolio(
   activos: Activo[],
@@ -222,7 +96,7 @@ export function calcularPortafolio(
 
   for (const activo of activos) {
     const ops = porActivo.get(activo.id) ?? []
-    const acc = acumularOperaciones(activo, ops, advertencias)
+    const { estado: acc } = recorrerCosteo(activo, ops, advertencias)
     pnlRealizado += acc.realizadoBase
     ingresos += acc.ingresosBase
     comisiones += acc.comisionesBase
@@ -287,7 +161,7 @@ export function calcularPortafolio(
 
 function valuarPosicion(
   posicion: Posicion,
-  acc: Acumulador,
+  acc: EstadoCosteo,
   contexto: ContextoValuacion,
   advertencias: Advertencia[],
 ): void {

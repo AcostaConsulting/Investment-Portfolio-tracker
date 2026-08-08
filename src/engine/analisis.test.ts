@@ -3,8 +3,8 @@ import { evaluarAlertas, type ConfigAlerta } from './alertas'
 import { calcularLiquidez } from './liquidez'
 import { evaluarMetas, type MetaFinanciera } from './metas'
 import { eventosFiscales, resumirEventos } from './fiscal'
-import type { Posicion } from './portafolio'
-import type { Activo, Operacion } from './tipos'
+import { calcularPortafolio, type Posicion } from './portafolio'
+import type { Activo, ContextoValuacion, Operacion } from './tipos'
 
 function posicion(parcial: {
   id: string
@@ -185,6 +185,59 @@ describe('eventosFiscales', () => {
     // Devengado del 1-ene al 11-jun-2026 = 161 días: 100,000·10%·161/360
     expect(rf.montoBase).toBeCloseTo(100_000 * 0.1 * (161 / 360), 0)
     expect(rf.isrEstimadoBase).toBeCloseTo(100_000 * 0.019 * (161 / 365), 0)
+  })
+
+  it('el dividendo capturado por el formulario cuenta por su importe, no por cantidad × precio', () => {
+    // Así lo guarda `FormOperacion` desde que existe `importeEfectivo`:
+    // cantidad y precio en 0, el monto en su propio campo. La copia que
+    // `fiscal.ts` tenía de la fórmula multiplicaba cantidad × precio y por
+    // eso reportaba $0 en TODO dividendo e interés capturado en la app (§16).
+    const ops = [
+      op({ activoId: 'aapl', tipo: 'compra', fecha: '2026-01-01', cantidad: 10, precioUnitario: 100, moneda: 'USD', tipoCambio: 17 }),
+      op({ activoId: 'aapl', tipo: 'dividendo', fecha: '2026-03-01', moneda: 'USD', tipoCambio: 18, importeEfectivo: 12 }),
+      op({ activoId: 'aapl', tipo: 'interes', fecha: '2026-04-01', moneda: 'MXN', tipoCambio: 1, importeEfectivo: 500 }),
+    ]
+    const eventos = eventosFiscales([accion], ops, 2026, '2026-06-11')
+    expect(eventos.find((e) => e.tipo === 'dividendo')?.montoBase).toBeCloseTo(216, 2)
+    expect(eventos.find((e) => e.tipo === 'interes_cobrado')?.montoBase).toBeCloseTo(500, 2)
+  })
+
+  it('la comisión de un dividendo se resta del importe efectivo', () => {
+    const ops = [
+      op({ activoId: 'aapl', tipo: 'dividendo', fecha: '2026-03-01', moneda: 'MXN', tipoCambio: 1, importeEfectivo: 500, comision: 20 }),
+    ]
+    const eventos = eventosFiscales([accion], ops, 2026, '2026-06-11')
+    expect(eventos.find((e) => e.tipo === 'dividendo')?.montoBase).toBeCloseTo(480, 2)
+  })
+
+  it('la ganancia realizada es la MISMA en Posiciones y en Fiscal', () => {
+    // El entregable de la consolidación (§16): las dos pantallas leen ahora
+    // la misma función, así que no pueden decirle números distintos al
+    // usuario sobre la misma venta. Incluye ventas en dos monedas y una
+    // venta que excede la tenencia, que es donde las copias diferían.
+    const ops = [
+      op({ activoId: 'aapl', tipo: 'compra', fecha: '2026-01-01', cantidad: 10, precioUnitario: 100, moneda: 'USD', tipoCambio: 17, comision: 5 }),
+      op({ activoId: 'aapl', tipo: 'compra', fecha: '2026-02-01', cantidad: 5, precioUnitario: 130, moneda: 'USD', tipoCambio: 18 }),
+      op({ activoId: 'aapl', tipo: 'venta', fecha: '2026-03-01', cantidad: 6, precioUnitario: 150, moneda: 'USD', tipoCambio: 18.5, comision: 3 }),
+      op({ activoId: 'aapl', tipo: 'venta', fecha: '2026-04-01', cantidad: 99, precioUnitario: 160, moneda: 'USD', tipoCambio: 18.5 }),
+    ]
+    const contexto: ContextoValuacion = {
+      monedaBase: 'MXN',
+      hoy: '2026-06-11',
+      precios: {},
+      tiposCambio: { USD: 18.5 },
+    }
+    const { posiciones } = calcularPortafolio([accion], ops, contexto)
+    const realizadoMotor = posiciones.find((p) => p.activo.id === 'aapl')!.realizadoBase
+
+    const eventos = eventosFiscales([accion], ops, 2026, '2026-06-11')
+    const realizadoFiscal = eventos
+      .filter((e) => e.tipo === 'venta_ganancia' || e.tipo === 'venta_perdida')
+      .reduce((s, e) => s + (e.resultadoBase ?? 0), 0)
+
+    expect(eventos.filter((e) => e.tipo.startsWith('venta'))).toHaveLength(2)
+    // `fiscal.ts` redondea cada evento a 2 decimales; el motor acumula a 6.
+    expect(realizadoFiscal).toBeCloseTo(realizadoMotor, 2)
   })
 
   it('resumirEventos acumula por categoría', () => {

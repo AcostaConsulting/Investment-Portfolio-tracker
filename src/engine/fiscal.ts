@@ -3,7 +3,9 @@
  * platicarlo con un asesor. Este motor NO calcula impuestos.
  *
  * - Ventas: ganancia/pérdida de capital contra costo promedio ponderado
- *   (misma regla que el motor de portafolio).
+ *   (misma regla que el motor de portafolio — literalmente la misma función,
+ *   `recorrerCosteo` de `costeo.ts`; antes era una copia propia que había
+ *   divergido, §16).
  * - Renta fija: interés devengado en el año + retención ISR estimada
  *   (% anual sobre capital, prorrateado — reutiliza valuarRentaFija).
  * - Dividendos e intereses cobrados (operaciones).
@@ -12,11 +14,10 @@
  * Montos en moneda base usando el tipo de cambio de cada operación.
  */
 
-import type { Activo, Operacion } from './tipos'
-import { OPERACIONES_EFECTIVO, OPERACIONES_EN_ESPECIE } from './tipos'
-import { compararPorFecha } from './fechas'
+import type { Activo, Advertencia, Operacion } from './tipos'
 import { redondear } from './dinero'
 import { valuarRentaFija } from './rentaFija'
+import { recorrerCosteo } from './costeo'
 
 export type TipoEventoFiscal =
   | 'venta_ganancia'
@@ -69,79 +70,51 @@ export function eventosFiscales(
     else grupos.set(op.activoId, [op])
   }
 
+  // El costeo lo hace `costeo.ts`; aquí solo se traduce a eventos del año.
+  // Las advertencias son para la UI del portafolio, no para el reporte fiscal.
+  const advertenciasIgnoradas: Advertencia[] = []
+
   for (const [activoId, ops] of grupos) {
     const activo = porActivo.get(activoId)
     if (!activo) continue
-    let cantidad = 0
-    let costoBase = 0
+    const { estado, eventos: movimientos } = recorrerCosteo(activo, ops, advertenciasIgnoradas)
+    const { cantidad, costoBase } = estado
 
-    for (const op of [...ops].sort(compararPorFecha)) {
-      const tc = op.tipoCambio > 0 ? op.tipoCambio : 1
-      const comisionBase = (op.comision ?? 0) * tc
-      const importeBase = op.cantidad * op.precioUnitario * tc
-      const enAnio = op.fecha >= inicioAnio && op.fecha <= finAnio
+    for (const movimiento of movimientos) {
+      const op = movimiento.operacion
+      if (op.fecha < inicioAnio || op.fecha > finAnio) continue
 
-      switch (op.tipo) {
-        case 'compra':
-          cantidad += op.cantidad
-          costoBase += importeBase + comisionBase
+      switch (movimiento.tipo) {
+        case 'venta':
+          eventos.push({
+            tipo: movimiento.resultadoBase >= 0 ? 'venta_ganancia' : 'venta_perdida',
+            fecha: op.fecha,
+            activoId,
+            simbolo: activo.simbolo,
+            montoBase: redondear(movimiento.brutoBase, 2),
+            resultadoBase: redondear(movimiento.resultadoBase, 2),
+          })
           break
-        case 'venta': {
-          const vendida = Math.min(op.cantidad, cantidad)
-          if (vendida <= 0) break
-          const pp = costoBase / cantidad
-          const resultado = vendida * op.precioUnitario * tc - comisionBase - vendida * pp
-          costoBase -= vendida * pp
-          cantidad -= vendida
-          if (enAnio) {
+        case 'especie':
+          if (movimiento.brutoBase > 0) {
             eventos.push({
-              tipo: resultado >= 0 ? 'venta_ganancia' : 'venta_perdida',
+              tipo: 'ingreso_especie',
               fecha: op.fecha,
               activoId,
               simbolo: activo.simbolo,
-              montoBase: redondear(vendida * op.precioUnitario * tc, 2),
-              resultadoBase: redondear(resultado, 2),
+              montoBase: redondear(movimiento.montoBase, 2),
             })
           }
           break
-        }
-        case 'ajuste': {
-          if (op.cantidad >= 0) {
-            cantidad += op.cantidad
-            costoBase += importeBase
-          } else {
-            const retiro = Math.min(-op.cantidad, cantidad)
-            if (cantidad > 0) {
-              costoBase -= costoBase * (retiro / cantidad)
-              cantidad -= retiro
-            }
-          }
+        case 'efectivo':
+          eventos.push({
+            tipo: op.tipo === 'dividendo' ? 'dividendo' : 'interes_cobrado',
+            fecha: op.fecha,
+            activoId,
+            simbolo: activo.simbolo,
+            montoBase: redondear(movimiento.montoBase, 2),
+          })
           break
-        }
-        default: {
-          if (OPERACIONES_EN_ESPECIE.has(op.tipo)) {
-            cantidad += op.cantidad
-            costoBase += importeBase
-            if (enAnio && importeBase > 0) {
-              eventos.push({
-                tipo: 'ingreso_especie',
-                fecha: op.fecha,
-                activoId,
-                simbolo: activo.simbolo,
-                montoBase: redondear(importeBase - comisionBase, 2),
-              })
-            }
-          } else if (OPERACIONES_EFECTIVO.has(op.tipo) && enAnio) {
-            eventos.push({
-              tipo: op.tipo === 'dividendo' ? 'dividendo' : 'interes_cobrado',
-              fecha: op.fecha,
-              activoId,
-              simbolo: activo.simbolo,
-              montoBase: redondear(importeBase - comisionBase, 2),
-            })
-          }
-          break
-        }
       }
     }
 
