@@ -4,6 +4,7 @@ import { Modal } from '../../ui/Modal'
 import { FormActivo } from './FormActivo'
 import { useApp } from '../../state/store'
 import { tipoCambioHistorico } from '../../servicios/precios'
+import { tcDofHistorico } from '../../servicios/tcDof'
 import type { Activo, Operacion, TipoOperacion } from '../../engine/tipos'
 import { OPERACIONES_EFECTIVO } from '../../engine/tipos'
 import { esFechaIsoValida, hoyIso } from '../../engine/fechas'
@@ -53,6 +54,9 @@ export function FormOperacion({
   // se sugiere el TC histórico de la fecha (desactivable).
   const [usarTcFecha, setUsarTcFecha] = useState(!existente)
   const [tcEstado, setTcEstado] = useState<'' | 'cargando' | 'error'>('')
+  // Fecha de determinación del FIX cuando el TC vino del DOF, para poder
+  // decirle al usuario de qué día es el número y no sólo ponérselo.
+  const [tcFechaDof, setTcFechaDof] = useState<string | undefined>()
 
   const activo = useMemo(() => activos.find((a) => a.id === activoId), [activos, activoId])
 
@@ -66,24 +70,48 @@ export function FormOperacion({
     if (esBase) setTipoCambio('1')
   }, [esBase])
 
-  // TC histórico de Frankfurter para la fecha de la operación.
+  // TC sugerido para la fecha de la operación.
+  //
+  // Primero se intenta el del DOF, que es el que tiene efecto fiscal: el FIX
+  // determinado dos días hábiles antes (§19.2). Viene de la serie empaquetada,
+  // así que para USD→MXN esto NO toca la red.
+  //
+  // Si no aplica —otro par de monedas, o una fecha posterior a la serie que
+  // trae este release— se cae a la fuente de siempre, que es una referencia de
+  // mercado y no el TC fiscal. Por eso la UI dice de dónde salió cada número.
   useEffect(() => {
     if (esBase || !usarTcFecha || !esFechaIsoValida(fecha) || moneda.trim().length < 3) return
     let cancelado = false
     setTcEstado('cargando')
-    tipoCambioHistorico(fecha, moneda.trim().toUpperCase(), monedaBase)
-      .then((tc) => {
+    const de = moneda.trim().toUpperCase()
+
+    void (async () => {
+      try {
+        const dof = await tcDofHistorico(fecha, de, monedaBase)
         if (cancelado) return
+        if (dof) {
+          setTipoCambio(String(dof.tasa))
+          setTcFechaDof(dof.fechaFix)
+          setTcEstado('')
+          return
+        }
+        const tc = await tipoCambioHistorico(fecha, de, monedaBase)
+        if (cancelado) return
+        setTcFechaDof(undefined)
         if (tc !== undefined) {
           setTipoCambio(String(tc))
           setTcEstado('')
         } else {
           setTcEstado('error')
         }
-      })
-      .catch(() => {
-        if (!cancelado) setTcEstado('error')
-      })
+      } catch {
+        if (!cancelado) {
+          setTcFechaDof(undefined)
+          setTcEstado('error')
+        }
+      }
+    })()
+
     return () => {
       cancelado = true
     }
@@ -284,6 +312,11 @@ export function FormOperacion({
                 <span className="error">{t('formOperacion.tcError')}</span>
               ) : tcEstado === 'cargando' ? (
                 <span className="ayuda">{t('formOperacion.tcCargando')}</span>
+              ) : tcFechaDof ? (
+                // El número tiene efecto fiscal: decir de qué día es y de dónde
+                // sale, no sólo ponerlo. Es la diferencia entre un dato y un
+                // dato defendible ante el contador.
+                <span className="ayuda">{t('formOperacion.tcDof', { fecha: tcFechaDof })}</span>
               ) : (
                 <span className="ayuda">{t('formOperacion.tipoCambioAyuda', { moneda: moneda || '?', base: monedaBase })}</span>
               )}

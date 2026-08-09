@@ -144,6 +144,7 @@ export const fr: Diccionario = {
     usarTcFecha: 'Utiliser le taux de cette date',
     tcCargando: 'Récupération du taux de change…',
     tcError: 'Taux introuvable ; saisissez-le manuellement.',
+    tcDof: 'Taux officiel DOF · FIX du {{fecha}}, celui applicable à cette date.',
   },
   formActivo: {
     nuevo: 'Nouvel actif',

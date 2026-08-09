@@ -144,6 +144,7 @@ export const zh: Diccionario = {
     usarTcFecha: '使用该日期的汇率',
     tcCargando: '正在获取汇率…',
     tcError: '无法获取汇率，请手动输入。',
+    tcDof: 'DOF 官方汇率 · {{fecha}} 的 FIX，适用于该日期。',
   },
   formActivo: {
     nuevo: '新资产',

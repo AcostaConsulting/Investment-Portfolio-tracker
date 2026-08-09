@@ -144,6 +144,7 @@ export const ja: Diccionario = {
     usarTcFecha: 'この日付の為替レートを使う',
     tcCargando: '為替レートを取得中…',
     tcError: 'レートを取得できませんでした。手動で入力してください。',
+    tcDof: 'DOF 公式レート · {{fecha}} の FIX（この日付に適用される値）。',
   },
   formActivo: {
     nuevo: '新しい資産',

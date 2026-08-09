@@ -147,6 +147,7 @@ export const es = {
     usarTcFecha: 'Usar TC de esta fecha',
     tcCargando: 'Buscando el tipo de cambio…',
     tcError: 'No se pudo obtener el TC; ingrésalo manualmente.',
+    tcDof: 'TC del DOF · FIX del {{fecha}}, el que aplica a esta fecha.',
   },
   formActivo: {
     nuevo: 'Nuevo activo',

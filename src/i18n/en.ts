@@ -144,6 +144,7 @@ export const en: Diccionario = {
     usarTcFecha: 'Use this date’s FX rate',
     tcCargando: 'Fetching the exchange rate…',
     tcError: 'Could not fetch the rate; enter it manually.',
+    tcDof: 'Official DOF rate · FIX from {{fecha}}, the one that applies to this date.',
   },
   formActivo: {
     nuevo: 'New asset',
