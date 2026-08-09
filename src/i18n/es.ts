@@ -342,7 +342,7 @@ export const es = {
     verTour: 'Volver a ver el tour',
     acerca: 'Acerca de',
     version: 'Versión',
-    hechoEn: 'Hecho para inversionistas mexicanos. 100% local: tus datos jamás salen de tu equipo.',
+    hechoEn: 'Hecho para inversionistas individuales. 100% local: tus datos jamás salen de tu equipo.',
   },
   licencia: {
     titulo: 'Licencia',
@@ -451,7 +451,7 @@ export const es = {
   },
   onboarding: {
     bienvenida: 'Bienvenido',
-    titulo1: 'Tus inversiones, en tu equipo',
+    titulo1: 'Tu portafolio completo. En tu equipo.',
     texto1: 'Tú capturas tus operaciones y la app calcula todo: costo promedio, P&L, renta fija mexicana. Sin cuenta, sin nube, sin telemetría.',
     monedaPregunta: '¿En qué moneda quieres ver tu portafolio?',
     idiomaPregunta: 'Idioma',
@@ -497,7 +497,7 @@ export const es = {
     faq2q: 'Compré CETES en cetesdirecto, ¿cómo los capturo?',
     faq3q: '¿Qué tipo de cambio usa la app para mis acciones en dólares?',
     faq2r: 'Crea un activo de renta fija tipo CETES con la tasa y el plazo de tu compra, y registra una compra por el monto invertido (precio 1). El devengo diario y el ISR estimado aparecen solos.',
-    faq3r: 'Cada operación guarda el tipo de cambio de su fecha (la app puede traerlo automáticamente). Para valuar hoy se usa el TC vigente de Configuración o el de precios en vivo.',
+    faq3r: 'Para operaciones en dólares te propone el tipo de cambio del DOF: el FIX que Banxico determinó dos días hábiles antes, que es el que aplica ante el SAT, y te dice de qué día viene. Cada operación guarda el suyo. Para valuar tu portafolio hoy se usa el TC vigente de Configuración o el de precios en vivo, que es otra cosa.',
     faq4q: 'El ISR que muestra, ¿es lo que voy a pagar?',
     faq4r: 'No. Es la retención estimada (% anual sobre capital, prorrateada por días) para que te des una idea y lo platiques con tu contador. La app no calcula impuestos.',
     faq5q: '¿Puedo llevar acciones de EUA, cripto y CETES juntos?',

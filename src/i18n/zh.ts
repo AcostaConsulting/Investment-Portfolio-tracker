@@ -338,7 +338,7 @@ export const zh: Diccionario = {
     verTour: '再看一遍导览',
     acerca: '关于',
     version: '版本',
-    hechoEn: '为墨西哥投资者打造。100% 本地：你的数据绝不离开你的电脑。',
+    hechoEn: '为个人投资者打造。100% 本地：你的数据绝不离开你的电脑。',
   },
   licencia: {
     titulo: '许可证',
@@ -447,7 +447,7 @@ export const zh: Diccionario = {
   },
   onboarding: {
     bienvenida: '欢迎',
-    titulo1: '你的投资，存在你的电脑里',
+    titulo1: '你的完整投资组合，就在你的电脑里。',
     texto1: '你录入交易，应用计算其余一切：平均成本、盈亏、墨西哥固定收益。无账号、无云端、无遥测。',
     monedaPregunta: '你想用哪种货币查看组合？',
     idiomaPregunta: '语言',
@@ -493,7 +493,7 @@ export const zh: Diccionario = {
     faq2q: '在 cetesdirecto 买了 CETES，怎么录入？',
     faq2r: '创建 CETES 类型的固定收益资产，填入利率和期限，然后按投资金额录入买入（价格填 1）。每日计息和预估 ISR 会自动显示。',
     faq3q: '美元股票用什么汇率？',
-    faq3r: '每笔交易保存其当日汇率（应用可自动获取）。今日估值使用设置里的现行汇率或实时价格。',
+    faq3r: '美元交易会建议 DOF 官方汇率：墨西哥央行在两个工作日前确定的 FIX，也就是墨西哥税务适用的那一个，并会告诉你它来自哪一天。每笔交易保存自己的汇率。今日估值使用设置里的现行汇率或实时价格，那是另一回事。',
     faq4q: '显示的 ISR 就是我要交的税吗？',
     faq4r: '不是。它是预估预扣（本金的年百分比，按天折算），供你与会计师讨论。应用不计算税款。',
     faq5q: '能同时记录美股、加密货币和 CETES 吗？',

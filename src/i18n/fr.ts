@@ -339,7 +339,7 @@ export const fr: Diccionario = {
     verTour: 'Revoir la visite guidée',
     acerca: 'À propos',
     version: 'Version',
-    hechoEn: 'Conçu pour les investisseurs mexicains. 100 % local : vos données ne quittent jamais votre machine.',
+    hechoEn: 'Conçu pour les investisseurs particuliers. 100 % local : vos données ne quittent jamais votre machine.',
   },
   licencia: {
     titulo: 'Licence',
@@ -448,7 +448,7 @@ export const fr: Diccionario = {
   },
   onboarding: {
     bienvenida: 'Bienvenue',
-    titulo1: 'Vos investissements, sur votre machine',
+    titulo1: 'Tout votre portefeuille. Sur votre machine.',
     texto1: 'Vous saisissez vos opérations, l’app calcule tout : coût moyen, P&L, revenu fixe mexicain. Pas de compte, pas de cloud, pas de télémétrie.',
     monedaPregunta: 'Dans quelle devise voulez-vous votre portefeuille ?',
     idiomaPregunta: 'Langue',
@@ -494,7 +494,7 @@ export const fr: Diccionario = {
     faq2q: 'J’ai acheté des CETES sur cetesdirecto, comment les saisir ?',
     faq2r: 'Créez un actif à revenu fixe CETES avec le taux et la durée de votre achat, puis enregistrez un achat du montant investi (prix 1). Les intérêts quotidiens et l’ISR estimé apparaissent automatiquement.',
     faq3q: 'Quel taux de change est utilisé pour mes actions en dollars ?',
-    faq3r: 'Chaque opération garde le taux de sa date (l’app peut le récupérer automatiquement). La valorisation du jour utilise le taux courant des Réglages ou des prix en direct.',
+    faq3r: 'Pour les opérations en dollars, elle propose le taux officiel du DOF : le FIX fixé par Banxico deux jours ouvrés plus tôt, celui qui s’applique fiscalement au Mexique, et elle indique de quel jour il provient. Chaque opération garde le sien. La valorisation du jour utilise le taux courant des Réglages ou des prix en direct, ce qui est autre chose.',
     faq4q: 'L’ISR affiché est-il ce que je paierai vraiment ?',
     faq4r: 'Non. C’est la retenue estimée (% annuel sur le capital, au prorata des jours) pour en discuter avec votre comptable. L’app ne calcule pas d’impôts.',
     faq5q: 'Puis-je suivre actions US, crypto et CETES ensemble ?',

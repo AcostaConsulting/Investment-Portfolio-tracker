@@ -339,7 +339,7 @@ export const en: Diccionario = {
     verTour: 'Watch the tour again',
     acerca: 'About',
     version: 'Version',
-    hechoEn: 'Built for Mexican investors. 100% local: your data never leaves your machine.',
+    hechoEn: 'Built for individual investors. 100% local: your data never leaves your machine.',
   },
   licencia: {
     titulo: 'License',
@@ -448,7 +448,7 @@ export const en: Diccionario = {
   },
   onboarding: {
     bienvenida: 'Welcome',
-    titulo1: 'Your investments, on your machine',
+    titulo1: 'Your whole portfolio. On your machine.',
     texto1: 'You record your transactions and the app computes everything: average cost, P&L, Mexican fixed income. No account, no cloud, no telemetry.',
     monedaPregunta: 'Which currency do you want your portfolio in?',
     idiomaPregunta: 'Language',
@@ -494,7 +494,7 @@ export const en: Diccionario = {
     faq2q: 'I bought CETES on cetesdirecto — how do I record them?',
     faq2r: 'Create a CETES fixed-income asset with your purchase rate and term, then record a buy for the invested amount (price 1). Daily accrual and estimated ISR show up automatically.',
     faq3q: 'Which exchange rate is used for my USD stocks?',
-    faq3r: 'Each transaction stores the rate of its date (the app can fetch it automatically). Today’s valuation uses the current rate from Settings or live prices.',
+    faq3r: 'For transactions in US dollars it suggests the official DOF rate: the FIX Banco de México set two business days earlier, which is the one Mexican tax rules apply, and it tells you which day it comes from. Each transaction stores its own. Today’s valuation uses the current rate from Settings or live prices, which is a different thing.',
     faq4q: 'Is the ISR shown what I will actually pay?',
     faq4r: 'No. It is the estimated withholding (annual % on principal, prorated by days) to give you an idea and discuss with your accountant. The app does not compute taxes.',
     faq5q: 'Can I track US stocks, crypto and CETES together?',
