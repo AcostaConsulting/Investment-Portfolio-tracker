@@ -13,6 +13,14 @@ import { documentoInicial, type DocumentoStore } from '../../state/documento'
 import { hoyIso } from '../../engine/fechas'
 import type { Activo, Operacion } from '../../engine/tipos'
 
+// Estas pruebas cargan exceljs de verdad (929 KB, en su propio chunk) dentro
+// del primer test que lo usa: por eso ése solo tarda ~560 ms cuando el resto
+// del suite tarda 1 ms. Con la máquina cargada llegaba a pasarse del timeout
+// default de 5 s y tiraba el suite entero con un rojo que no era de lógica
+// —2 falsos negativos observados el 8 ago, handoff §16.8—. El margen es para
+// eso; si alguna de estas pruebas tarda de verdad 20 s, es un problema real.
+vi.setConfig({ testTimeout: 20_000 })
+
 // `t` devuelve la llave tal cual: así los encabezados esperados documentan de
 // qué llave i18n sale cada columna.
 const t = ((llave: string) => llave) as unknown as TFunction
