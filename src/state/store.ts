@@ -24,6 +24,7 @@ import {
   eliminarOperaciones as eliminarOperacionesDoc,
   type MetadatosEditables,
 } from '../engine/edicionActivo'
+import { aplicarCorrecciones, type CorreccionTc } from '../engine/correccionTcDof'
 import { planEfectivo, validarLicencia, type EstadoLicencia } from '../licencias/validar'
 import { crearDatosEjemplo } from './ejemplo'
 import type { Plan } from '../licencias/planes'
@@ -59,6 +60,8 @@ export interface EstadoApp {
   eliminarOperacion(id: string): void
   /** Borrado masivo: elimina varias operaciones en una sola mutación (un solo guardado). */
   eliminarOperaciones(ids: string[]): void
+  /** Reescribe el `tipoCambio` de las operaciones indicadas (corrección al TC del DOF). */
+  corregirTiposCambio(correcciones: CorreccionTc[]): void
   fijarPrecio(activoId: string, precio: PrecioActual): void
   fijarTipoCambio(moneda: string, valor: number): void
   actualizarAjustes(parcial: Partial<Ajustes>): void
@@ -149,6 +152,10 @@ export const useApp = create<EstadoApp>((set, get) => ({
 
   eliminarOperaciones(ids) {
     get().mutarDoc((doc) => eliminarOperacionesDoc(doc, ids))
+  },
+  corregirTiposCambio(correcciones) {
+    if (correcciones.length === 0) return
+    get().mutarDoc((doc) => ({ ...doc, operaciones: aplicarCorrecciones(doc.operaciones, correcciones) }))
   },
 
   fijarPrecio(activoId, precio) {

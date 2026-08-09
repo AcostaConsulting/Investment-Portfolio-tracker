@@ -17,7 +17,9 @@
     "dist": "npm run build && electron-builder --win --publish never",
     "release": "npm run build && electron-builder --win --publish always",
     "licencia:llaves": "node scripts/generar-llaves.mjs",
-    "licencia:nueva": "node scripts/generar-licencia.mjs"
+    "licencia:nueva": "node scripts/generar-licencia.mjs",
+    "dev:aislado": "node scripts/dev-aislado.mjs",
+    "tc-dof:generar": "node scripts/generar-tc-dof.mjs"
   },
   "dependencies": {
     "@fontsource-variable/fraunces": "^5.2.9",

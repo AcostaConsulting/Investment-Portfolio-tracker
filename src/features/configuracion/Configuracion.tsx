@@ -13,6 +13,7 @@ import {
 } from '../../servicios/respaldo'
 import { SeccionLicencia } from './SeccionLicencia'
 import { GestionEtiquetas } from './GestionEtiquetas'
+import { CorregirTcDof } from './CorregirTcDof'
 import { hoyIso } from '../../engine/fechas'
 
 export function Configuracion() {
@@ -28,6 +29,7 @@ export function Configuracion() {
 
   const [estadoPrecios, setEstadoPrecios] = useState<'' | 'cargando' | 'ok' | string>('')
   const [usarPin, setUsarPin] = useState(false)
+  const [corrigiendoTc, setCorrigiendoTc] = useState(false)
   const [pin, setPin] = useState('')
   const [mensajeDatos, setMensajeDatos] = useState('')
   const [nuevaMoneda, setNuevaMoneda] = useState('')
@@ -180,6 +182,7 @@ export function Configuracion() {
           {t('clasificacion.gestionEtiquetas')}
         </button>
         {gestionandoEtiquetas && <GestionEtiquetas alCerrar={() => setGestionandoEtiquetas(false)} />}
+        <CorregirTcDof abierto={corrigiendoTc} alCerrar={() => setCorrigiendoTc(false)} />
       </div>
 
       {/* ---------- Tipos de cambio ---------- */}
@@ -328,6 +331,13 @@ export function Configuracion() {
             </button>
           </div>
           {mensajeDatos && <span className="mini suave">{mensajeDatos}</span>}
+          <button
+            className="btn btn-fantasma"
+            style={{ alignSelf: 'flex-start' }}
+            onClick={() => setCorrigiendoTc(true)}
+          >
+            {t('tcDof.abrir')}
+          </button>
           <button
             className="btn btn-fantasma"
             style={{ alignSelf: 'flex-start' }}
