@@ -339,7 +339,7 @@ export const fr: Diccionario = {
     verTour: 'Revoir la visite guidée',
     acerca: 'À propos',
     version: 'Version',
-    hechoEn: 'Conçu pour les investisseurs particuliers. 100 % local : vos données ne quittent jamais votre machine.',
+    hechoEn: 'Conçu pour les investisseurs qui veulent voir tout leur patrimoine au même endroit — aujourd’hui, en profondeur, pour le Mexique. 100 % local : vos données ne quittent jamais votre machine.',
   },
   licencia: {
     titulo: 'Licence',

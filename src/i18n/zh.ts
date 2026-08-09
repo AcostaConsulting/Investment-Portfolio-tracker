@@ -338,7 +338,7 @@ export const zh: Diccionario = {
     verTour: '再看一遍导览',
     acerca: '关于',
     version: '版本',
-    hechoEn: '为个人投资者打造。100% 本地：你的数据绝不离开你的电脑。',
+    hechoEn: '为希望在一处看到全部资产的投资者打造 — 目前深耕墨西哥。100% 本地：你的数据绝不离开你的电脑。',
   },
   licencia: {
     titulo: '许可证',

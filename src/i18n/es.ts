@@ -342,7 +342,7 @@ export const es = {
     verTour: 'Volver a ver el tour',
     acerca: 'Acerca de',
     version: 'Versión',
-    hechoEn: 'Hecho para inversionistas individuales. 100% local: tus datos jamás salen de tu equipo.',
+    hechoEn: 'Hecho para inversionistas que quieren ver todo su patrimonio en un solo lugar — hoy, a fondo, para México. 100% local: tus datos jamás salen de tu equipo.',
   },
   licencia: {
     titulo: 'Licencia',

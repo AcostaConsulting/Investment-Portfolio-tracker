@@ -339,7 +339,7 @@ export const en: Diccionario = {
     verTour: 'Watch the tour again',
     acerca: 'About',
     version: 'Version',
-    hechoEn: 'Built for individual investors. 100% local: your data never leaves your machine.',
+    hechoEn: 'Built for investors who want their whole net worth in one place — today, in depth, for Mexico. 100% local: your data never leaves your machine.',
   },
   licencia: {
     titulo: 'License',
