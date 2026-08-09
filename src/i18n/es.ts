@@ -452,7 +452,7 @@ export const es = {
   onboarding: {
     bienvenida: 'Bienvenido',
     titulo1: 'Tu portafolio completo. En tu equipo.',
-    texto1: 'Tú capturas tus operaciones y la app calcula todo: costo promedio, P&L, renta fija mexicana. Sin cuenta, sin nube, sin telemetría.',
+    texto1: 'Tú capturas tus operaciones y la app calcula todo: costo promedio, P&L, tu renta fija local. Sin cuenta, sin nube, sin telemetría.',
     monedaPregunta: '¿En qué moneda quieres ver tu portafolio?',
     idiomaPregunta: 'Idioma',
     comoEmpezar: '¿Cómo quieres empezar?',

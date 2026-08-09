@@ -26,7 +26,7 @@ export function Onboarding() {
     <div className="onboarding">
       <div className="onboarding-tarjeta">
         <div className="lateral-marca" style={{ padding: 0, marginBottom: 4 }}>
-          Tracker de <em>Portafolio</em>
+          <em>{t('app.nombre')}</em>
         </div>
 
         {paso === 0 && (

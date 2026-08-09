@@ -448,7 +448,7 @@ export const zh: Diccionario = {
   onboarding: {
     bienvenida: '欢迎',
     titulo1: '你的完整投资组合，就在你的电脑里。',
-    texto1: '你录入交易，应用计算其余一切：平均成本、盈亏、墨西哥固定收益。无账号、无云端、无遥测。',
+    texto1: '你录入交易，应用计算其余一切：平均成本、盈亏、你所在市场的固定收益。无账号、无云端、无遥测。',
     monedaPregunta: '你想用哪种货币查看组合？',
     idiomaPregunta: '语言',
     comoEmpezar: '想怎么开始？',

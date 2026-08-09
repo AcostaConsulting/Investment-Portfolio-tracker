@@ -449,7 +449,7 @@ export const ja: Diccionario = {
   onboarding: {
     bienvenida: 'ようこそ',
     titulo1: 'ポートフォリオのすべてを、あなたのPCに。',
-    texto1: '取引を記録すれば、平均取得単価・損益・メキシコ債券まですべて自動計算。アカウント不要、クラウドなし、テレメトリなし。',
+    texto1: '取引を記録すれば、平均取得単価・損益・地元の債券まですべて自動計算。アカウント不要、クラウドなし、テレメトリなし。',
     monedaPregunta: 'どの通貨でポートフォリオを見ますか？',
     idiomaPregunta: '言語',
     comoEmpezar: 'どこから始めますか？',

@@ -449,7 +449,7 @@ export const fr: Diccionario = {
   onboarding: {
     bienvenida: 'Bienvenue',
     titulo1: 'Tout votre portefeuille. Sur votre machine.',
-    texto1: 'Vous saisissez vos opérations, l’app calcule tout : coût moyen, P&L, revenu fixe mexicain. Pas de compte, pas de cloud, pas de télémétrie.',
+    texto1: 'Vous saisissez vos opérations, l’app calcule tout : coût moyen, P&L, votre revenu fixe local. Pas de compte, pas de cloud, pas de télémétrie.',
     monedaPregunta: 'Dans quelle devise voulez-vous votre portefeuille ?',
     idiomaPregunta: 'Langue',
     comoEmpezar: 'Comment voulez-vous commencer ?',
