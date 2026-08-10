@@ -18,6 +18,7 @@
  */
 
 import type { Activo, DetalleRentaFija } from './tipos'
+import type { TramoPosicion } from './costeo'
 import { diasEntre, sumarDias } from './fechas'
 import { redondear } from './dinero'
 
@@ -28,6 +29,20 @@ export interface PosicionRentaFija {
   cantidad: number
   /** Monto invertido en la moneda del instrumento. */
   costoNativo: number
+  /**
+   * Historia de la posición, en orden cronológico (la produce `recorrerCosteo`).
+   *
+   * Si viene, el devengo **integra la posición realmente sostenida en cada
+   * tramo** en vez de aplicar el saldo de hoy a todo el plazo. Sin ella se
+   * conserva el comportamiento viejo, que es lo que usan las pruebas del motor
+   * y cualquier llamador que solo tenga un escalar.
+   *
+   * Por qué importa: con el escalar, una compra de 2026 reescribía el interés
+   * declarado de 2024 (AUDITORIA-ROBUSTEZ.md #5) y una segunda compra devengaba
+   * como si hubiera empezado con la primera (#10). Las dos cosas son la misma:
+   * el devengo es una integral en el tiempo, no un producto.
+   */
+  tramos?: readonly TramoPosicion[]
 }
 
 export interface OpcionesValuacionRF {
@@ -65,6 +80,48 @@ export function isrEstimado(capital: number, tasaIsrAnual: number, dias: number)
 }
 
 /**
+ * Un tramo recortado a la ventana de devengo: cuánto capital hubo y por
+ * cuántos días, dentro de `[inicio, fin]`.
+ */
+interface TramoEnVentana {
+  costoNativo: number
+  cantidad: number
+  dias: number
+}
+
+/**
+ * Recorta la historia de la posición a la ventana de devengo del instrumento.
+ *
+ * Cada tramo rige desde su fecha hasta la del siguiente; el último se extiende
+ * hasta el final de la ventana. Lo que quede fuera —compras posteriores al
+ * vencimiento, por ejemplo— aporta cero, que es justo lo que antes inflaba el
+ * devengo de un plazo ya cerrado.
+ */
+function tramosEnVentana(
+  tramos: readonly TramoPosicion[],
+  inicio: string,
+  fin: string,
+): TramoEnVentana[] {
+  const dentro: TramoEnVentana[] = []
+  for (let i = 0; i < tramos.length; i++) {
+    const tramo = tramos[i]!
+    const siguiente = tramos[i + 1]
+    // El tramo rige en [desde, hasta); se recorta contra [inicio, fin).
+    const desde = tramo.desde > inicio ? tramo.desde : inicio
+    const hastaTramo = siguiente ? siguiente.desde : fin
+    const hasta = hastaTramo < fin ? hastaTramo : fin
+    const dias = diasEntre(desde, hasta)
+    if (dias > 0) dentro.push({ costoNativo: tramo.costoNativo, cantidad: tramo.cantidad, dias })
+  }
+  return dentro
+}
+
+/** Suma ponderada capital × días, en unidades de "peso-día". */
+function pesoDias(tramos: TramoEnVentana[]): number {
+  return tramos.reduce((s, t) => s + t.costoNativo * t.dias, 0)
+}
+
+/**
  * Valúa una posición de renta fija al día `hoy`.
  * Todos los montos en la moneda del instrumento.
  */
@@ -92,18 +149,25 @@ export function valuarRentaFija(
   let interesAlVencimiento: number | undefined
   let ajusteUdi = 0
 
+  // Historia de la posición recortada al plazo: si viene, el devengo se integra
+  // tramo por tramo en vez de aplicar el saldo de hoy a todo el período.
+  const fechaCorte = sumarDias(detalle.fechaInicio, diasTranscurridos)
+  const ventana = posicion.tramos ? tramosEnVentana(posicion.tramos, detalle.fechaInicio, fechaCorte) : undefined
+
   switch (detalle.instrumento) {
     case 'cetes':
     case 'pagare':
     case 'sofipo': {
       // Tasa simple, base 360, devengo lineal.
-      interesDevengado = monto * tasa * (diasTranscurridos / 360)
+      interesDevengado = ventana ? (tasa * pesoDias(ventana)) / 360 : monto * tasa * (diasTranscurridos / 360)
       if (diasPlazo !== undefined) interesAlVencimiento = monto * tasa * (diasPlazo / 360)
       break
     }
     case 'ahorro': {
       // Capitalización diaria, base 365. Sin vencimiento.
-      interesDevengado = monto * ((1 + tasa / 365) ** diasTranscurridos - 1)
+      interesDevengado = ventana
+        ? ventana.reduce((s, t) => s + t.costoNativo * ((1 + tasa / 365) ** t.dias - 1), 0)
+        : monto * ((1 + tasa / 365) ** diasTranscurridos - 1)
       break
     }
     case 'bono_m':
@@ -116,7 +180,16 @@ export function valuarRentaFija(
       const diasCuponActual = diasTranscurridos % 182
       // Los cupones completos ya se pagaron en efectivo (el usuario los captura
       // como operaciones de interés); aquí solo va el devengado del cupón en curso.
-      interesDevengado = nominalTotal * tasa * (diasCuponActual / 360)
+      if (posicion.tramos) {
+        // El cupón en curso corre desde el último corte semestral: se integra la
+        // TENENCIA (títulos) sobre ese tramo, no la de hoy sobre todo el cupón.
+        const inicioCupon = sumarDias(detalle.fechaInicio, cuponesCompletos * 182)
+        const enCupon = tramosEnVentana(posicion.tramos, inicioCupon, fechaCorte)
+        const titulosDias = enCupon.reduce((s, t) => s + t.cantidad * valorNominal * t.dias, 0)
+        interesDevengado = (tasa * titulosDias) / 360
+      } else {
+        interesDevengado = nominalTotal * tasa * (diasCuponActual / 360)
+      }
       if (diasPlazo !== undefined) {
         // Proyección de cupones restantes hasta el vencimiento.
         const cuponesTotales = Math.ceil(diasPlazo / 182)
@@ -142,7 +215,11 @@ export function valuarRentaFija(
     }
   }
 
-  const isrDevengado = isrEstimado(monto, isr, diasTranscurridos)
+  // El ISR es un % anual sobre el CAPITAL, así que también depende de cuánto
+  // capital hubo y por cuánto tiempo, no del saldo de hoy.
+  const isrDevengado = ventana
+    ? (isr / 100) * (ventana.reduce((s, t) => s + Math.max(0, t.costoNativo) * t.dias, 0) / 365)
+    : isrEstimado(monto, isr, diasTranscurridos)
   const isrAlVencimiento = diasPlazo !== undefined ? isrEstimado(monto, isr, diasPlazo) : undefined
 
   const valorBruto = monto + interesDevengado + ajusteUdi

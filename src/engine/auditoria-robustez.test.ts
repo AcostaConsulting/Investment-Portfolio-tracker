@@ -18,7 +18,11 @@
  *
  * Los hallazgos de persistencia (#1, #2, #3, #7, #8, #9, #20) ya NO están aquí:
  * se arreglaron en Fase A y sus candados viven en `electron/main/almacen.test.ts`
- * y `src/state/documento.test.ts`.
+ * y `src/state/documento.test.ts`. El #4 (separador decimal) tiene los suyos en
+ * `engine/numero.test.ts`.
+ *
+ * `[CERRADO #n]` marca un hallazgo que YA se arregló y cuya prueba se quedó
+ * aquí como candado de regresión: si alguien reintroduce el bug, revienta.
  */
 
 import { describe, expect, it } from 'vitest'
@@ -468,7 +472,7 @@ describe('B8 · dos compras del mismo instrumento de renta fija (§17.3)', () =>
     },
   }
 
-  it.fails('[PENDIENTE #10] la 2ª compra debería devengar desde SU fecha, no desde la 1ª', () => {
+  it('[CERRADO #10] la 2ª compra devenga desde SU fecha, no desde la 1ª', () => {
     const hoy = '2026-04-01'
     // Realidad: 10,000 el 1-ene (90 días) + 10,000 el 1-mar (31 días).
     const correcto =
@@ -493,10 +497,10 @@ describe('B8 · dos compras del mismo instrumento de renta fija (§17.3)', () =>
     expect(correcto).toBeCloseTo(336.11, 2)
     // Lo correcto: la app debería devengar 336.11, no 500. Sobreestima 48.8%.
     expect(app).toBeCloseTo(correcto, 2)
-    expect(sobreestimacion).toBe(0)
+    expect(sobreestimacion).toBeCloseTo(0, 6)
   })
 
-  it.fails('[PENDIENTE #10] el mismo error no debería llegar al reporte FISCAL', () => {
+  it('[CERRADO #10] y el reporte FISCAL dice lo mismo', () => {
     const eventos = eventosFiscales(
       [rf],
       [
@@ -514,7 +518,7 @@ describe('B8 · dos compras del mismo instrumento de renta fija (§17.3)', () =>
 
 // ============================ B8-bis · AÑO FISCAL PASADO Y POSICIÓN ACTUAL
 
-describe('B8-bis · el devengo de RF de un año pasado usa la posición de HOY', () => {
+describe('B8-bis · el devengo de RF de un año pasado ya NO usa la posición de hoy', () => {
   const rf: Activo = {
     id: 'rf1',
     simbolo: 'PAGARE',
@@ -524,7 +528,7 @@ describe('B8-bis · el devengo de RF de un año pasado usa la posición de HOY',
     rentaFija: { instrumento: 'pagare', tasaAnual: 12, fechaInicio: '2024-01-01' },
   }
 
-  it.fails('[PENDIENTE #5] comprar más en 2026 NO debería cambiar el interés declarado de 2024', () => {
+  it('[CERRADO #5] comprar más en 2026 NO cambia el interés declarado de 2024', () => {
     const base = [
       op({ id: '1', activoId: 'rf1', tipo: 'compra', fecha: '2024-01-01', cantidad: 1, precioUnitario: 10000 }),
     ]
@@ -545,7 +549,7 @@ describe('B8-bis · el devengo de RF de un año pasado usa la posición de HOY',
     expect(b).toBeCloseTo(a, 2)
   })
 
-  it.fails('[PENDIENTE #5] vender en 2026 NO debería borrar el interés devengado de 2024', () => {
+  it('[CERRADO #5] vender en 2026 NO borra el interés devengado de 2024', () => {
     const base = [
       op({ id: '1', activoId: 'rf1', tipo: 'compra', fecha: '2024-01-01', cantidad: 1, precioUnitario: 10000 }),
     ]

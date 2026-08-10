@@ -77,7 +77,7 @@ export function eventosFiscales(
   for (const [activoId, ops] of grupos) {
     const activo = porActivo.get(activoId)
     if (!activo) continue
-    const { estado, eventos: movimientos } = recorrerCosteo(activo, ops, advertenciasIgnoradas)
+    const { estado, eventos: movimientos, tramos } = recorrerCosteo(activo, ops, advertenciasIgnoradas)
     const { cantidad, costoBase } = estado
 
     for (const movimiento of movimientos) {
@@ -120,8 +120,22 @@ export function eventosFiscales(
 
     // --- Devengo de renta fija dentro del año (estimación) ---
     const rf = activo.rentaFija
-    if (rf && cantidad > 0 && costoBase > 0 && rf.fechaInicio <= corte) {
-      const posicionRf = { cantidad, costoNativo: costoBase }
+    // Ojo: NO se condiciona a `cantidad > 0`. Ese guard miraba la posición de
+    // HOY, así que vender en 2026 borraba del reporte el interés que sí se
+    // devengó en 2024 (AUDITORIA-ROBUSTEZ.md #5). Si durante el año no hubo
+    // posición, la integral da cero y el evento no se emite igualmente.
+    if (rf && rf.fechaInicio <= corte) {
+      // Con `tramos`, el devengo integra la posición sostenida en cada momento.
+      // Sin ellos, una operación posterior reescribía un año ya cerrado: una
+      // compra de 2026 subía el interés declarado de 2024 de $1,216.67 a
+      // $12,166.67, y vender lo dejaba en $0 (AUDITORIA-ROBUSTEZ.md #5).
+      // La resta `hasta − desde` sigue dando el interés DEL AÑO porque la
+      // integral es acumulativa desde `fechaInicio`.
+      // `fiscal.ts` valúa siempre en moneda BASE (a diferencia de portafolio.ts,
+      // §16.3), así que los tramos tienen que traer la misma pista: si no, el
+      // devengo mezclaría base con nativo sin que nada lo dijera.
+      const tramosBase = tramos.map((t) => ({ ...t, costoNativo: t.costoBase }))
+      const posicionRf = { cantidad, costoNativo: costoBase, tramos: tramosBase }
       const hasta = valuarRentaFija(rf, posicionRf, corte, opciones)
       const desde =
         rf.fechaInicio >= inicioAnio

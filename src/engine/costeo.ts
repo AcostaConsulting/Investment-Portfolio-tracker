@@ -77,9 +77,27 @@ export type EventoCosteo =
       montoBase: number
     }
 
+/**
+ * La posición tal como quedó al cerrar una fecha con actividad. Rige desde
+ * `desde` (inclusive) hasta el `desde` del siguiente tramo (exclusive).
+ *
+ * Existe para que la renta fija devengue sobre lo que **realmente se sostuvo en
+ * cada momento** en vez de sobre el saldo de hoy. Con un escalar, una compra de
+ * 2026 reescribía el interés declarado de 2024 (AUDITORIA-ROBUSTEZ.md #5) y una
+ * segunda compra devengaba como si hubiera empezado con la primera (#10).
+ */
+export interface TramoPosicion {
+  desde: string
+  cantidad: number
+  costoBase: number
+  costoNativo: number
+}
+
 export interface ResultadoCosteo {
   estado: EstadoCosteo
   eventos: EventoCosteo[]
+  /** Un tramo por fecha con actividad, en orden cronológico. */
+  tramos: TramoPosicion[]
 }
 
 /**
@@ -126,7 +144,23 @@ export function recorrerCosteo(
 ): ResultadoCosteo {
   const estado = estadoVacio()
   const eventos: EventoCosteo[] = []
+  const tramos: TramoPosicion[] = []
   const ordenadas = [...operaciones].sort(compararPorFecha)
+
+  /** Cierra el tramo de una fecha: se llama cuando cambia el día y al final. */
+  const cerrarTramo = (fecha: string): void => {
+    const ultimo = tramos[tramos.length - 1]
+    const tramo = {
+      desde: fecha,
+      cantidad: estado.cantidad,
+      costoBase: estado.costoBase,
+      costoNativo: estado.costoNativo,
+    }
+    // Varias operaciones el mismo día colapsan en un solo tramo: lo que importa
+    // es la posición al cerrar el día, no los pasos intermedios.
+    if (ultimo && ultimo.desde === fecha) tramos[tramos.length - 1] = tramo
+    else tramos.push(tramo)
+  }
 
   for (const op of ordenadas) {
     let tc = op.tipoCambio
@@ -219,6 +253,7 @@ export function recorrerCosteo(
         break
       }
     }
+    cerrarTramo(op.fecha)
   }
 
   // Limpia residuos de punto flotante en posiciones cerradas.
@@ -226,6 +261,8 @@ export function recorrerCosteo(
     estado.cantidad = 0
     estado.costoBase = 0
     estado.costoNativo = 0
+    const ultimo = tramos[tramos.length - 1]
+    if (ultimo) tramos[tramos.length - 1] = { ...ultimo, cantidad: 0, costoBase: 0, costoNativo: 0 }
   }
-  return { estado, eventos }
+  return { estado, eventos, tramos }
 }

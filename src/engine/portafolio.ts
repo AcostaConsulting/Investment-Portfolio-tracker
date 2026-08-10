@@ -17,7 +17,7 @@ import type { Activo, Advertencia, ContextoValuacion, Operacion } from './tipos'
 import { aMonedaBase, redondear } from './dinero'
 import { valuarRentaFija, type ValuacionRentaFija } from './rentaFija'
 import { abiertasDe, asignacionPorClase, pctDelTotal, valorRepartible } from './asignacion'
-import { recorrerCosteo, type EstadoCosteo } from './costeo'
+import { recorrerCosteo, type EstadoCosteo, type TramoPosicion } from './costeo'
 
 export interface Posicion {
   activo: Activo
@@ -96,7 +96,7 @@ export function calcularPortafolio(
 
   for (const activo of activos) {
     const ops = porActivo.get(activo.id) ?? []
-    const { estado: acc } = recorrerCosteo(activo, ops, advertencias)
+    const { estado: acc, tramos } = recorrerCosteo(activo, ops, advertencias)
     pnlRealizado += acc.realizadoBase
     ingresos += acc.ingresosBase
     comisiones += acc.comisionesBase
@@ -120,7 +120,7 @@ export function calcularPortafolio(
       posicion.precioPromedioBase = acc.costoBase / acc.cantidad
       if (!acc.monedaMixta) posicion.precioPromedioNativo = acc.costoNativo / acc.cantidad
 
-      valuarPosicion(posicion, acc, contexto, advertencias)
+      valuarPosicion(posicion, acc, contexto, advertencias, tramos)
       costoTotal += acc.costoBase
     }
 
@@ -164,6 +164,7 @@ function valuarPosicion(
   acc: EstadoCosteo,
   contexto: ContextoValuacion,
   advertencias: Advertencia[],
+  tramos?: readonly TramoPosicion[],
 ): void {
   const { activo } = posicion
 
@@ -171,7 +172,12 @@ function valuarPosicion(
   if (activo.clase === 'renta_fija' && activo.rentaFija) {
     const valuacion = valuarRentaFija(
       activo.rentaFija,
-      { cantidad: acc.cantidad, costoNativo: acc.monedaMixta ? acc.costoBase : acc.costoNativo },
+      {
+        cantidad: acc.cantidad,
+        costoNativo: acc.monedaMixta ? acc.costoBase : acc.costoNativo,
+        // Los tramos siguen la MISMA pista que el escalar de arriba.
+        tramos: tramos?.map((t) => (acc.monedaMixta ? { ...t, costoNativo: t.costoBase } : t)),
+      },
       contexto.hoy,
       { tasaIsrAnual: contexto.tasaIsrAnual, udiActual: contexto.udiActual },
     )

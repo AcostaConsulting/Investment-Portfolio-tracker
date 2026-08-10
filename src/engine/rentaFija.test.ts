@@ -220,3 +220,78 @@ describe('isrEstimado', () => {
     expect(isrEstimado(0, 1.9, 100)).toBe(0)
   })
 })
+
+// ============================================================================
+// Devengo por TRAMOS (AUDITORIA-ROBUSTEZ.md #5 y #10, arreglados el 10 ago).
+// Sin `tramos` se conserva el comportamiento viejo; con ellos, el devengo
+// integra la posición realmente sostenida en cada período.
+// ============================================================================
+
+describe('valuarRentaFija — devengo integrando la posición en el tiempo', () => {
+  const cetes = {
+    instrumento: 'cetes' as const,
+    tasaAnual: 10,
+    fechaInicio: '2026-01-01',
+    fechaVencimiento: '2026-04-01', // 90 días
+  }
+
+  it('sin tramos se comporta igual que siempre (compatibilidad)', () => {
+    const v = valuarRentaFija(cetes, { cantidad: 1, costoNativo: 20000 }, '2026-04-01')
+    expect(v.interesBrutoDevengado).toBeCloseTo(20000 * 0.1 * (90 / 360), 6)
+  })
+
+  it('una segunda compra devenga desde SU fecha, no desde el inicio', () => {
+    const tramos = [
+      { desde: '2026-01-01', cantidad: 1, costoBase: 10000, costoNativo: 10000 },
+      { desde: '2026-03-01', cantidad: 2, costoBase: 20000, costoNativo: 20000 },
+    ]
+    const v = valuarRentaFija(cetes, { cantidad: 2, costoNativo: 20000, tramos }, '2026-04-01')
+    // 10,000 × 59 días  +  20,000 × 31 días  =  1,210,000 peso-día
+    expect(v.interesBrutoDevengado).toBeCloseTo((0.1 * 1_210_000) / 360, 6)
+    expect(v.interesBrutoDevengado).toBeCloseTo(336.11, 2)
+  })
+
+  it('lo comprado DESPUÉS del vencimiento no devenga nada', () => {
+    const tramos = [
+      { desde: '2026-01-01', cantidad: 1, costoBase: 10000, costoNativo: 10000 },
+      { desde: '2026-07-01', cantidad: 9, costoBase: 90000, costoNativo: 90000 },
+    ]
+    const v = valuarRentaFija(cetes, { cantidad: 9, costoNativo: 90000, tramos }, '2026-08-09')
+    // Sólo cuentan los 90 días de plazo sobre los 10,000 que sí se sostuvieron.
+    expect(v.interesBrutoDevengado).toBeCloseTo(10000 * 0.1 * (90 / 360), 6)
+  })
+
+  it('lo comprado ANTES del inicio del instrumento cuenta desde el inicio', () => {
+    const tramos = [{ desde: '2025-06-01', cantidad: 1, costoBase: 10000, costoNativo: 10000 }]
+    const v = valuarRentaFija(cetes, { cantidad: 1, costoNativo: 10000, tramos }, '2026-04-01')
+    expect(v.interesBrutoDevengado).toBeCloseTo(10000 * 0.1 * (90 / 360), 6)
+  })
+
+  it('vender a media vida deja de devengar desde la venta', () => {
+    const tramos = [
+      { desde: '2026-01-01', cantidad: 1, costoBase: 10000, costoNativo: 10000 },
+      { desde: '2026-02-01', cantidad: 0, costoBase: 0, costoNativo: 0 },
+    ]
+    const v = valuarRentaFija(cetes, { cantidad: 0, costoNativo: 0, tramos }, '2026-04-01')
+    // 31 días con 10,000 y el resto en cero.
+    expect(v.interesBrutoDevengado).toBeCloseTo(10000 * 0.1 * (31 / 360), 6)
+  })
+
+  it('el ISR estimado también se integra, no usa el saldo de hoy', () => {
+    const tramos = [
+      { desde: '2026-01-01', cantidad: 1, costoBase: 10000, costoNativo: 10000 },
+      { desde: '2026-03-01', cantidad: 2, costoBase: 20000, costoNativo: 20000 },
+    ]
+    const v = valuarRentaFija(cetes, { cantidad: 2, costoNativo: 20000, tramos }, '2026-04-01', {
+      tasaIsrAnual: 1.9,
+    })
+    expect(v.isrEstimadoDevengado).toBeCloseTo((0.019 * 1_210_000) / 365, 6)
+  })
+
+  it('sin ninguna posición dentro del plazo, el devengo es cero', () => {
+    const tramos = [{ desde: '2026-06-01', cantidad: 1, costoBase: 10000, costoNativo: 10000 }]
+    const v = valuarRentaFija(cetes, { cantidad: 1, costoNativo: 10000, tramos }, '2026-08-09')
+    expect(v.interesBrutoDevengado).toBe(0)
+    expect(v.isrEstimadoDevengado).toBe(0)
+  })
+})
