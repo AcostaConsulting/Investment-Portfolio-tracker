@@ -325,61 +325,58 @@ describe('B4 · valores extremos', () => {
 
 // ============================================ B5 · ORDEN INTRADÍA (UUID)
 
-describe('B5 · orden intradía decidido por UUID aleatorio', () => {
-  it('[MEDICIÓN] el mismo día, compra y venta: el orden cambia el P&L REALIZADO', () => {
-    // Mismas tres operaciones, mismo día. Lo único que cambia es el `id`, que
-    // en producción es crypto.randomUUID() — o sea, azar.
-    const hacer = (ids: [string, string, string]) =>
-      recorrerCosteo(
-        ACCION,
-        [
-          op({ id: ids[0], tipo: 'compra', fecha: '2026-05-04', cantidad: 10, precioUnitario: 100 }),
-          op({ id: ids[1], tipo: 'compra', fecha: '2026-05-04', cantidad: 10, precioUnitario: 300 }),
-          op({ id: ids[2], tipo: 'venta', fecha: '2026-05-04', cantidad: 10, precioUnitario: 250 }),
-        ],
-        [],
-      ).estado
+describe('B5 · orden intradía — antes lo decidía un UUID, ahora es un dato', () => {
+  const TRES = (secuencias: [number, number, number] | undefined, ids: [string, string, string]) => [
+    op({ id: ids[0], tipo: 'compra', fecha: '2026-05-04', cantidad: 10, precioUnitario: 100, ...(secuencias ? { secuencia: secuencias[0] } : {}) }),
+    op({ id: ids[1], tipo: 'compra', fecha: '2026-05-04', cantidad: 10, precioUnitario: 300, ...(secuencias ? { secuencia: secuencias[1] } : {}) }),
+    op({ id: ids[2], tipo: 'venta', fecha: '2026-05-04', cantidad: 10, precioUnitario: 250, ...(secuencias ? { secuencia: secuencias[2] } : {}) }),
+  ]
 
-    // Orden A: las dos compras antes de la venta (promedio 200 → +500)
-    const a = hacer(['aaa', 'bbb', 'zzz'])
-    // Orden B: la venta entre las dos compras (promedio 100 → +1500)
-    const b = hacer(['aaa', 'zzz', 'bbb'])
+  it('[INVARIANTE] el orden SIGUE importando — eso no es el bug', () => {
+    // Que el orden mueva el número es correcto y esperable: vender antes o
+    // después de una compra cambia el costo promedio. El bug era QUIÉN lo
+    // decidía. Con `secuencia` lo decide el usuario, y de forma predecible.
+    const realizado = (secs: [number, number, number]) =>
+      recorrerCosteo(ACCION, TRES(secs, ['aaa', 'bbb', 'ccc']), []).estado.realizadoBase
 
-    expect(a.realizadoBase).toBeCloseTo(500, 6)
-    expect(b.realizadoBase).toBeCloseTo(1500, 6)
-    const diferencia = Math.abs(a.realizadoBase - b.realizadoBase)
-    console.log(`[orden intradía] mismo documento, mismo día → realizado ${a.realizadoBase} vs ${b.realizadoBase}`)
-    console.log(`[orden intradía] diferencia en la ganancia declarable: $${diferencia.toFixed(2)}`)
-    expect(diferencia).toBeGreaterThan(0)
+    // Las dos compras y luego la venta: promedio 200 → +500
+    expect(realizado([1, 2, 3])).toBeCloseTo(500, 6)
+    // La venta en medio: promedio 100 → +1500
+    expect(realizado([1, 3, 2])).toBeCloseTo(1500, 6)
+    // La venta primero: no hay tenencia, se acota a 0 → 0
+    expect(realizado([2, 3, 1])).toBeCloseTo(0, 6)
   })
 
-  it.fails('[PENDIENTE #6] la ganancia declarada NO debería depender del UUID: 1000 sorteos', () => {
-    // Simula lo que realmente pasa: tres operaciones del mismo día cuyos ids
-    // son UUID v4. Se mide la dispersión del número que va al reporte fiscal.
+  it('[CERRADO #6] la ganancia declarada YA NO depende del UUID: 1000 sorteos', () => {
+    // Mismo escenario que midió §21.1, pero con la secuencia explícita: se
+    // barajan los ids 1000 veces y el número que va al reporte fiscal no se
+    // mueve. Antes daba tres valores distintos —−500, 0 y +1500— según qué
+    // UUID hubiera tocado al capturar.
     const resultados = new Set<number>()
     for (let i = 0; i < 1000; i++) {
       const ids = [`${i}-a`, `${i}-b`, `${i}-c`]
-      // baraja determinista por semilla
       const r = prng(i + 1)
       for (let j = ids.length - 1; j > 0; j--) {
         const k = Math.floor(r() * (j + 1))
         ;[ids[j], ids[k]] = [ids[k]!, ids[j]!]
       }
-      const { estado } = recorrerCosteo(
-        ACCION,
-        [
-          op({ id: ids[0]!, tipo: 'compra', fecha: '2026-05-04', cantidad: 10, precioUnitario: 100 }),
-          op({ id: ids[1]!, tipo: 'compra', fecha: '2026-05-04', cantidad: 10, precioUnitario: 300 }),
-          op({ id: ids[2]!, tipo: 'venta', fecha: '2026-05-04', cantidad: 10, precioUnitario: 250 }),
-        ],
-        [],
-      )
+      const { estado } = recorrerCosteo(ACCION, TRES([1, 2, 3], ids as [string, string, string]), [])
       resultados.add(redondear(estado.realizadoBase, 2))
     }
-    console.log(`[orden intradía] valores distintos de realizado observados: ${[...resultados].sort((x, y) => x - y).join(', ')}`)
-    // Con un orden intradía determinista (campo `secuencia`, §15.8 paso 2) las
-    // 1000 barajas darían UN solo resultado. Hoy dan tres: −500, 0 y +1500.
+    console.log(`[orden intradía] valores distintos de realizado con secuencia explícita: ${[...resultados].join(', ')}`)
     expect(resultados.size).toBe(1)
+    expect([...resultados][0]).toBeCloseTo(500, 2)
+  })
+
+  it('[CERRADO #6] sin secuencia sigue mandando el UUID — y por eso la migración la asigna', () => {
+    // Documenta el comportamiento heredado que la migración existe para cerrar:
+    // un documento que nunca pasó por `migrarDocumento` sigue a merced del id.
+    const resultados = new Set<number>()
+    for (const ids of [['aaa', 'bbb', 'zzz'], ['aaa', 'zzz', 'bbb'], ['zzz', 'aaa', 'bbb']] as [string, string, string][]) {
+      const { estado } = recorrerCosteo(ACCION, TRES(undefined, ids), [])
+      resultados.add(redondear(estado.realizadoBase, 2))
+    }
+    expect(resultados.size).toBeGreaterThan(1)
   })
 })
 

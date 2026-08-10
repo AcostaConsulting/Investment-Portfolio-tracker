@@ -34,8 +34,25 @@ export function esFechaIsoValida(valor: string): boolean {
   return !Number.isNaN(fecha.getTime()) && fecha.toISOString().slice(0, 10) === valor
 }
 
-/** Comparador estable para ordenar operaciones: por fecha y luego por id. */
-export function compararPorFecha(a: { fecha: string; id: string }, b: { fecha: string; id: string }): number {
+/**
+ * Comparador estable para ordenar operaciones: por fecha, luego por `secuencia`
+ * y, como último recurso, por `id`.
+ *
+ * El desempate por `id` era el hallazgo #6: el `id` es un `crypto.randomUUID()`,
+ * así que el orden intradía lo decidía el azar del momento de captura. Ahora lo
+ * decide un dato explícito del documento que el usuario puede corregir.
+ *
+ * El `id` se conserva como último recurso —y no como bug— por dos motivos: un
+ * documento sin migrar debe seguir ordenándose exactamente igual que antes, y
+ * dos secuencias empatadas nunca deben dejar el orden indefinido.
+ */
+export function compararPorFecha(
+  a: { fecha: string; id: string; secuencia?: number },
+  b: { fecha: string; id: string; secuencia?: number },
+): number {
   if (a.fecha !== b.fecha) return a.fecha < b.fecha ? -1 : 1
+  if (typeof a.secuencia === 'number' && typeof b.secuencia === 'number' && a.secuencia !== b.secuencia) {
+    return a.secuencia - b.secuencia
+  }
   return a.id < b.id ? -1 : a.id > b.id ? 1 : 0
 }

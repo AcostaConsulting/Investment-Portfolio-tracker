@@ -1124,3 +1124,33 @@ tr:hover .fila-acciones {
 .campo .ayuda.campo-error {
   color: var(--loss);
 }
+
+/* Orden intradía: solo se ve cuando hay más de una operación del mismo activo
+   ese día, que es donde el orden mueve un número (handoff §25). */
+.orden-dia {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.orden-dia > span {
+  min-width: 26px;
+  color: var(--text-secondary);
+}
+
+.orden-dia .btn-icono {
+  padding: 2px;
+}
+
+.orden-dia .btn-icono:first-of-type svg {
+  transform: rotate(-90deg);
+}
+
+.orden-dia .btn-icono:last-of-type svg {
+  transform: rotate(90deg);
+}
+
+.orden-dia .btn-icono:disabled {
+  opacity: 0.25;
+  cursor: default;
+}

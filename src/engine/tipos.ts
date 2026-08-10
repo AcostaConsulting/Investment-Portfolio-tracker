@@ -54,6 +54,19 @@ export interface Operacion {
   moneda: string
   /** 1 unidad de `moneda` = `tipoCambio` unidades de la moneda base. 1 si es la base. */
   tipoCambio: number
+  /**
+   * Orden dentro del mismo día, explícito.
+   *
+   * Contador global monótono del documento (no reinicia por día). Existe porque
+   * el desempate era el `id` —un UUID aleatorio— y eso decidía, sin que nadie
+   * lo eligiera, qué operación iba primero: con lotes, qué lote se vendió y por
+   * tanto la ganancia declarada (AUDITORIA-ROBUSTEZ.md #6).
+   *
+   * Opcional en el tipo porque los documentos guardados antes del 10 ago no lo
+   * traen; `migrarDocumento` lo asigna al cargar, derivándolo del orden que ya
+   * tenían para no mover nada.
+   */
+  secuencia?: number
   /** Comisión en `moneda` (siempre ≥ 0). */
   comision?: number
   /**

@@ -4,6 +4,7 @@
  */
 
 import type { Activo, Operacion, PrecioActual } from '../engine/tipos'
+import { asignarSecuencias } from '../engine/secuencia'
 import type { ConfigAlerta } from '../engine/alertas'
 import type { MetaFinanciera } from '../engine/metas'
 
@@ -181,7 +182,10 @@ export function migrarDocumento(crudo: unknown): DocumentoStore {
     version: 1,
     ajustes: { ...base.ajustes, ...soloMapa(doc.ajustes) },
     activos: soloObjetos(doc.activos),
-    operaciones: soloObjetos(doc.operaciones),
+    // El orden intradía deja de ser un UUID y pasa a ser un dato: se deriva del
+    // orden que el documento YA tenía, así que migrar no mueve ninguna ganancia
+    // ya declarada (AUDITORIA-ROBUSTEZ.md #6, handoff §25).
+    operaciones: asignarSecuencias(soloObjetos<Operacion>(doc.operaciones)),
     precios: soloMapa(doc.precios),
     tiposCambio: soloMapa(doc.tiposCambio),
     etiquetas: soloObjetos(doc.etiquetas),

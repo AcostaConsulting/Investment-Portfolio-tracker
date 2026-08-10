@@ -127,6 +127,10 @@ export const zh: Diccionario = {
     seleccionarTodas: '全选',
     eliminarSeleccionados: '删除 {{cantidad}} 笔',
     cancelarSeleccion: '取消选择',
+    orden: '顺序',
+    ordenAyuda: '同一资产在同一天有多笔交易时，顺序会影响计算结果。应用不知道具体时间，你可以在这里调整。',
+    masTarde: '当天更晚',
+    masTemprano: '当天更早',
   },
   formOperacion: {
     activo: '资产',

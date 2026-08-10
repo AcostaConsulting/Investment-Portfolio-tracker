@@ -127,6 +127,10 @@ export const fr: Diccionario = {
     seleccionarTodas: 'Tout sélectionner',
     eliminarSeleccionados: 'Supprimer {{cantidad}}',
     cancelarSeleccion: 'Annuler la sélection',
+    orden: 'Ordre',
+    ordenAyuda: 'Quand un actif a plusieurs opérations le même jour, leur ordre change le calcul. L’app ne connaît pas l’heure : vous pouvez la corriger ici.',
+    masTarde: 'Plus tard ce jour-là',
+    masTemprano: 'Plus tôt ce jour-là',
   },
   formOperacion: {
     activo: 'Actif',

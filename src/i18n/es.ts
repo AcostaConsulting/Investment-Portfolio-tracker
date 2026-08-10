@@ -130,6 +130,10 @@ export const es = {
     seleccionarTodas: 'Seleccionar todas',
     eliminarSeleccionados: 'Eliminar {{cantidad}}',
     cancelarSeleccion: 'Cancelar selección',
+    orden: 'Orden',
+    ordenAyuda: 'Cuando hay varias operaciones del mismo activo el mismo día, el orden afecta el cálculo. La app no conoce la hora: puedes corregirlo aquí.',
+    masTarde: 'Más tarde ese día',
+    masTemprano: 'Más temprano ese día',
   },
   formOperacion: {
     activo: 'Activo',

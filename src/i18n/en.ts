@@ -127,6 +127,10 @@ export const en: Diccionario = {
     seleccionarTodas: 'Select all',
     eliminarSeleccionados: 'Delete {{cantidad}}',
     cancelarSeleccion: 'Cancel selection',
+    orden: 'Order',
+    ordenAyuda: 'When an asset has several transactions on the same day, their order affects the calculation. The app does not know the time of day — you can fix it here.',
+    masTarde: 'Later that day',
+    masTemprano: 'Earlier that day',
   },
   formOperacion: {
     activo: 'Asset',

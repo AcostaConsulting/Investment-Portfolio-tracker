@@ -127,6 +127,10 @@ export const ja: Diccionario = {
     seleccionarTodas: 'すべて選択',
     eliminarSeleccionados: '{{cantidad}} 件を削除',
     cancelarSeleccion: '選択を解除',
+    orden: '順序',
+    ordenAyuda: '同じ資産で同じ日に複数の取引があると、その順序が計算結果を左右します。アプリは時刻を知らないので、ここで直せます。',
+    masTarde: 'その日のより後',
+    masTemprano: 'その日のより前',
   },
   formOperacion: {
     activo: '資産',

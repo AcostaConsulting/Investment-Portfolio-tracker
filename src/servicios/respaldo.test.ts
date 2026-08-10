@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { deserializarRespaldo, serializarRespaldo } from './respaldo'
 import { documentoInicial } from '../state/documento'
+import { compararPorFecha } from '../engine/fechas'
 
 function docDePrueba() {
   const doc = documentoInicial()
@@ -25,8 +26,30 @@ describe('respaldo sin cifrar', () => {
     const resultado = await deserializarRespaldo(texto)
     expect(resultado.ok).toBe(true)
     if (resultado.ok) {
-      expect(resultado.documento.operaciones).toEqual(doc.operaciones)
       expect(resultado.documento.activos).toEqual(doc.activos)
+      // Restaurar un respaldo lo MIGRA, igual que cargar `datos.json`: desde el
+      // 10 ago eso incluye asignar `secuencia` a las operaciones que no la
+      // traían (§25). Lo que no puede cambiar es ningún dato del usuario.
+      expect(resultado.documento.operaciones).toEqual(
+        doc.operaciones.map((o) => ({ ...o, secuencia: expect.any(Number) })),
+      )
+    }
+  })
+
+  it('restaurar un respaldo anterior a §25 no cambia el orden de las operaciones', async () => {
+    // El orden efectivo tras restaurar debe ser el mismo que tenía el respaldo,
+    // aunque ahora sea explícito en vez de derivado del UUID.
+    const doc = docDePrueba()
+    doc.operaciones.push(
+      { ...doc.operaciones[0]!, id: 'aaa', cantidad: 1 },
+      { ...doc.operaciones[0]!, id: 'zzz', cantidad: 2 },
+    )
+    const antes = [...doc.operaciones].sort(compararPorFecha).map((o) => o.id)
+    const resultado = await deserializarRespaldo(await serializarRespaldo(doc))
+    expect(resultado.ok).toBe(true)
+    if (resultado.ok) {
+      const despues = [...resultado.documento.operaciones].sort(compararPorFecha).map((o) => o.id)
+      expect(despues).toEqual(antes)
     }
   })
 

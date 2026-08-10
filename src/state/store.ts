@@ -32,6 +32,7 @@ import type { Plan } from '../licencias/planes'
 import type { ResumenRespaldo } from '../shared/api'
 import { textoABase64 } from '../servicios/respaldo'
 import { hoyIso } from '../engine/fechas'
+import { moverEnSuDia, siguienteSecuencia } from '../engine/secuencia'
 import llavePublicaPem from '../licencias/llave-publica.pem?raw'
 
 const RETRASO_GUARDADO_MS = 600
@@ -136,6 +137,8 @@ export interface EstadoApp {
   eliminarOperaciones(ids: string[]): void
   /** Reescribe el `tipoCambio` de las operaciones indicadas (corrección al TC del DOF). */
   corregirTiposCambio(correcciones: CorreccionTc[]): void
+  /** Sube (−1) o baja (+1) una operación dentro de su día y su activo (§25). */
+  moverOperacion(id: string, delta: -1 | 1): void
   fijarPrecio(activoId: string, precio: PrecioActual): void
   fijarTipoCambio(moneda: string, valor: number): void
   actualizarAjustes(parcial: Partial<Ajustes>): void
@@ -297,7 +300,18 @@ export const useApp = create<EstadoApp>((set, get) => ({
   },
 
   guardarOperacion(operacion) {
-    get().mutarDoc((doc) => editarOperacionDoc(doc, operacion))
+    get().mutarDoc((doc) => {
+      const previa = doc.operaciones.find((o) => o.id === operacion.id)
+      // Editar conserva su lugar en el día; capturar de nuevo va al final. La
+      // app no tiene la hora real de la operación y no se la inventa: el orden
+      // se puede corregir a mano desde Movimientos (§25).
+      const secuencia = operacion.secuencia ?? previa?.secuencia ?? siguienteSecuencia(doc.operaciones)
+      return editarOperacionDoc(doc, { ...operacion, secuencia })
+    })
+  },
+
+  moverOperacion(id, delta) {
+    get().mutarDoc((doc) => ({ ...doc, operaciones: moverEnSuDia(doc.operaciones, id, delta) }))
   },
 
   eliminarOperacion(id) {
@@ -395,7 +409,10 @@ export const useApp = create<EstadoApp>((set, get) => ({
     get().mutarDoc((doc) => ({
       ...doc,
       activos: [...doc.activos, ...ejemplo.activos],
-      operaciones: [...doc.operaciones, ...ejemplo.operaciones],
+      operaciones: [
+        ...doc.operaciones,
+        ...ejemplo.operaciones.map((o, i) => ({ ...o, secuencia: siguienteSecuencia(doc.operaciones) + i })),
+      ],
       precios: { ...doc.precios, ...ejemplo.precios },
       tiposCambio: { ...ejemplo.tiposCambio, ...doc.tiposCambio },
     }))
@@ -421,11 +438,16 @@ export const useApp = create<EstadoApp>((set, get) => ({
   },
 
   importarLote(activosNuevos, operaciones) {
-    get().mutarDoc((doc) => ({
-      ...doc,
-      activos: [...doc.activos, ...activosNuevos],
-      operaciones: [...doc.operaciones, ...operaciones],
-    }))
+    get().mutarDoc((doc) => {
+      // El orden del archivo es la mejor señal que hay del orden intradía real.
+      let n = siguienteSecuencia(doc.operaciones)
+      const conSecuencia = operaciones.map((o) => ({ ...o, secuencia: o.secuencia ?? n++ }))
+      return {
+        ...doc,
+        activos: [...doc.activos, ...activosNuevos],
+        operaciones: [...doc.operaciones, ...conSecuencia],
+      }
+    })
   },
 
   async activarLicencia(cadena) {

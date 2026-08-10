@@ -32,6 +32,7 @@ export function Movimientos() {
   const plan = useApp((s) => s.plan)
   const eliminarOperacion = useApp((s) => s.eliminarOperacion)
   const eliminarOperaciones = useApp((s) => s.eliminarOperaciones)
+  const moverOperacion = useApp((s) => s.moverOperacion)
   const portafolio = usePortafolio()
 
   const [editando, setEditando] = useState<Operacion | 'nueva' | undefined>()
@@ -56,6 +57,27 @@ export function Movimientos() {
       })
       .sort((a, b) => -compararPorFecha(a, b))
   }, [doc.operaciones, filtroActivo, filtroTipo, desde, hasta])
+
+  /**
+   * Posición de cada operación dentro de su (activo, día) — el ÚNICO ámbito
+   * donde el orden mueve un número, porque el costeo camina cada activo por
+   * separado. Es lo que sustituye al desempate por UUID (§25).
+   */
+  const rangoEnSuDia = useMemo(() => {
+    const grupos = new Map<string, Operacion[]>()
+    for (const op of doc.operaciones) {
+      const k = `${op.activoId}|${op.fecha}`
+      const lista = grupos.get(k)
+      if (lista) lista.push(op)
+      else grupos.set(k, [op])
+    }
+    const mapa = new Map<string, { n: number; de: number }>()
+    for (const lista of grupos.values()) {
+      if (lista.length < 2) continue // con una sola no hay orden que enseñar
+      ;[...lista].sort(compararPorFecha).forEach((op, i) => mapa.set(op.id, { n: i + 1, de: lista.length }))
+    }
+    return mapa
+  }, [doc.operaciones])
 
   async function alExportar() {
     setExportando(true)
@@ -197,6 +219,9 @@ export function Movimientos() {
                   />
                 </th>
                 <th>{t('comunes.fecha')}</th>
+                <th style={{ width: 76 }} title={t('movimientos.ordenAyuda')}>
+                  {t('movimientos.orden')}
+                </th>
                 <th>{t('comunes.activo')}</th>
                 <th>{t('comunes.tipo')}</th>
                 <th className="num">{t('comunes.cantidad')}</th>
@@ -220,6 +245,9 @@ export function Movimientos() {
                       />
                     </td>
                     <td className="cifra mini">{formatoFecha(op.fecha)}</td>
+                    <td>
+                      <ControlOrden rango={rangoEnSuDia.get(op.id)} alMover={(d) => moverOperacion(op.id, d)} />
+                    </td>
                     <td>
                       <span style={{ fontWeight: 600 }}>{activo?.simbolo ?? '?'}</span>
                       {op.nota && (
@@ -262,6 +290,58 @@ export function Movimientos() {
         />
       )}
       {importando && <ImportarExcel abierto alCerrar={() => setImportando(false)} />}
+    </div>
+  )
+}
+
+/**
+ * Orden dentro del día. Solo aparece cuando el activo tiene más de una
+ * operación esa fecha: es el único caso en que el orden mueve un número, y
+ * enseñarlo siempre sería ruido.
+ *
+ * Existe porque la app **no tiene** la hora de la operación (`fecha` es
+ * `YYYY-MM-DD`, sin hora, por diseño) y no la va a inventar. Antes ese orden lo
+ * decidía el UUID de la operación — un volado (§25). Ahora lo decide quien sí
+ * lo sabe.
+ */
+function ControlOrden({
+  rango,
+  alMover,
+}: {
+  rango: { n: number; de: number } | undefined
+  alMover: (delta: -1 | 1) => void
+}) {
+  const { t } = useTranslation()
+  if (!rango) return null
+  // ⚠️ La tabla se pinta de MÁS NUEVO a más viejo, así que la flecha de arriba
+  // tiene que mover la operación MÁS TARDE en el día (+1) para que la fila suba
+  // en pantalla. Con el delta al revés el control parecía roto: se pulsaba
+  // "arriba" y la fila bajaba. Lo encontró el click-through, no el tipo.
+  const subir = rango.n === rango.de
+  const bajar = rango.n === 1
+  return (
+    <div className="orden-dia" title={t('movimientos.ordenAyuda')}>
+      <span className="cifra mini">
+        {rango.n}/{rango.de}
+      </span>
+      <button
+        className="btn-icono"
+        disabled={subir}
+        onClick={() => alMover(1)}
+        title={t('movimientos.masTarde')}
+        aria-label={t('movimientos.masTarde')}
+      >
+        <Icono nombre="flecha" tam={12} />
+      </button>
+      <button
+        className="btn-icono"
+        disabled={bajar}
+        onClick={() => alMover(-1)}
+        title={t('movimientos.masTemprano')}
+        aria-label={t('movimientos.masTemprano')}
+      >
+        <Icono nombre="flecha" tam={12} />
+      </button>
     </div>
   )
 }
