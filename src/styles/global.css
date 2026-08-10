@@ -1113,3 +1113,14 @@ tr:hover .fila-acciones {
   flex-direction: column;
   align-items: stretch;
 }
+
+/* La pista que confirma cómo se leyó la cifra: es la defensa visible contra el
+   bug del separador decimal (AUDITORIA-ROBUSTEZ.md #4). Ver ui/CampoNumero.tsx. */
+.campo .ayuda.campo-lectura {
+  color: var(--text-secondary);
+  font-family: var(--f-mono);
+}
+
+.campo .ayuda.campo-error {
+  color: var(--loss);
+}

@@ -7,6 +7,9 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApp } from '../../state/store'
+import { numeroOUndefined } from '../../engine/numero'
+import { CampoNumero } from '../../ui/CampoNumero'
+import { CampoAjusteNumero } from '../../ui/CampoAjusteNumero'
 import {
   useAlertasDisparadas,
   useCambioPortafolio,
@@ -30,6 +33,9 @@ import type { ClaseActivo } from '../../engine/tipos'
 import type { Meta } from '../../state/documento'
 
 const CLASES: ClaseActivo[] = ['accion', 'cripto', 'renta_fija']
+
+/** Lee un campo con la regla compartida de `engine/numero.ts` (AUDITORIA-ROBUSTEZ.md #4). */
+const num = (texto: string | undefined): number => (texto === undefined ? 0 : (numeroOUndefined(texto) ?? 0))
 
 export function Analisis() {
   const { t } = useTranslation()
@@ -150,15 +156,15 @@ function Alertas() {
   const [min, setMin] = useState('')
   const [max, setMax] = useState('')
 
-  const valida = activoId !== '' && (Number(min) > 0 || Number(max) > 0)
+  const valida = activoId !== '' && (num(min) > 0 || num(max) > 0)
 
   function agregar() {
     if (!valida) return
     guardarAlertaPrecio({
       id: crypto.randomUUID(),
       activoId,
-      ...(Number(min) > 0 ? { precioMin: Number(min) } : {}),
-      ...(Number(max) > 0 ? { precioMax: Number(max) } : {}),
+      ...(num(min) > 0 ? { precioMin: num(min) } : {}),
+      ...(num(max) > 0 ? { precioMax: num(max) } : {}),
       activa: true,
     })
     setMin('')
@@ -197,11 +203,11 @@ function Alertas() {
         </div>
         <div className="campo" style={{ width: 130 }}>
           <label>{t('alertasPrecio.precioMin')}</label>
-          <input type="number" step="any" min="0" value={min} onChange={(e) => setMin(e.target.value)} />
+          <CampoNumero valor={min} alCambiar={setMin} />
         </div>
         <div className="campo" style={{ width: 130 }}>
           <label>{t('alertasPrecio.precioMax')}</label>
-          <input type="number" step="any" min="0" value={max} onChange={(e) => setMax(e.target.value)} />
+          <CampoNumero valor={max} alCambiar={setMax} />
         </div>
         <button className="btn btn-primario" onClick={agregar} disabled={!valida}>
           {t('comunes.agregar')}
@@ -334,13 +340,7 @@ function Liquidez() {
         </div>
         <div className="campo" style={{ width: 150, marginLeft: 'auto' }}>
           <label>{t('analisis.liquidezUmbral')}</label>
-          <input
-            type="number"
-            min="0"
-            max="100"
-            value={umbral}
-            onChange={(e) => actualizarAjustes({ umbralLiquidezPct: Number(e.target.value) || 0 })}
-          />
+          <CampoAjusteNumero numero={umbral} alCambiar={(n) => actualizarAjustes({ umbralLiquidezPct: n ?? 0 })} />
         </div>
       </div>
       <div className="barra-h" style={{ height: 10 }}>
@@ -370,8 +370,9 @@ function Benchmarks() {
   const [rend, setRend] = useState('')
 
   function agregar() {
-    if (!nombre.trim() || rend === '' || Number.isNaN(Number(rend))) return
-    guardarBenchmark({ id: crypto.randomUUID(), nombre: nombre.trim(), rendimientoPct: Number(rend) })
+    const r = numeroOUndefined(rend)
+    if (!nombre.trim() || r === undefined) return
+    guardarBenchmark({ id: crypto.randomUUID(), nombre: nombre.trim(), rendimientoPct: r })
     setNombre('')
     setRend('')
   }
@@ -391,7 +392,7 @@ function Benchmarks() {
         </div>
         <div className="campo" style={{ width: 150 }}>
           <label>{t('analisis.benchmarkRend')}</label>
-          <input type="number" step="any" value={rend} onChange={(e) => setRend(e.target.value)} placeholder="12.5" />
+          <CampoNumero valor={rend} alCambiar={setRend} placeholder="12.5" />
         </div>
         <button className="btn btn-primario" onClick={agregar} disabled={!nombre.trim() || rend === ''}>
           {t('comunes.agregar')}
@@ -562,14 +563,14 @@ function FormMeta({ existente, alCerrar }: { existente?: Meta; alCerrar: () => v
   const [clase, setClase] = useState<ClaseActivo | ''>(existente?.clase ?? '')
   const [fechaLimite, setFechaLimite] = useState(existente?.fechaLimite ?? '')
 
-  const valido = nombre.trim() !== '' && Number(objetivo) > 0 && (fechaLimite === '' || esFechaIsoValida(fechaLimite))
+  const valido = nombre.trim() !== '' && num(objetivo) > 0 && (fechaLimite === '' || esFechaIsoValida(fechaLimite))
 
   function guardar() {
     if (!valido) return
     guardarMeta({
       id: existente?.id ?? crypto.randomUUID(),
       nombre: nombre.trim(),
-      objetivo: Number(objetivo),
+      objetivo: num(objetivo),
       ...(clase ? { clase } : {}),
       ...(fechaLimite ? { fechaLimite } : {}),
     })
@@ -601,7 +602,7 @@ function FormMeta({ existente, alCerrar }: { existente?: Meta; alCerrar: () => v
           <label>
             {t('metas.objetivo')} ({monedaBase})
           </label>
-          <input type="number" step="any" min="0" value={objetivo} onChange={(e) => setObjetivo(e.target.value)} />
+          <CampoNumero valor={objetivo} alCambiar={setObjetivo} />
         </div>
         <div className="campo">
           <label>{t('metas.claseQueCuenta')}</label>
@@ -638,18 +639,18 @@ function Rebalanceo() {
     Object.fromEntries(CLASES.map((c) => [c, objetivo[c] !== undefined ? String(objetivo[c]) : ''])),
   )
 
-  const suma = CLASES.reduce((s, c) => s + (Number(borrador[c]) || 0), 0)
+  const suma = CLASES.reduce((s, c) => s + num(borrador[c]), 0)
   const sumaOk = Math.abs(suma - 100) < 0.01
 
   function guardar() {
     if (!sumaOk) return
     fijarRebalanceo({
-      porClase: Object.fromEntries(CLASES.filter((c) => Number(borrador[c]) > 0).map((c) => [c, Number(borrador[c])])),
+      porClase: Object.fromEntries(CLASES.filter((c) => num(borrador[c]) > 0).map((c) => [c, num(borrador[c])])),
     })
   }
 
   const sugerencias = CLASES.map((clase) => {
-    const meta = Number(borrador[clase]) || 0
+    const meta = num(borrador[clase])
     const actualPct = totales.porClase[clase]?.pct ?? 0
     const actualValor = totales.porClase[clase]?.valor ?? 0
     return { clase, meta, actualPct, delta: (meta / 100) * totales.valorTotal - actualValor }
@@ -662,13 +663,7 @@ function Rebalanceo() {
         {CLASES.map((c) => (
           <div className="campo" key={c} style={{ width: 110 }}>
             <label>{t(`clases.${c}`)} %</label>
-            <input
-              type="number"
-              min="0"
-              max="100"
-              value={borrador[c]}
-              onChange={(e) => setBorrador((b) => ({ ...b, [c]: e.target.value }))}
-            />
+            <CampoNumero valor={borrador[c] ?? ''} alCambiar={(texto) => setBorrador((b) => ({ ...b, [c]: texto }))} />
           </div>
         ))}
         <button className="btn btn-primario" onClick={guardar} disabled={!sumaOk}>

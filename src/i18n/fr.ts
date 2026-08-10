@@ -512,6 +512,11 @@ export const fr: Diccionario = {
     copiado: 'Copié — collez-le dans le formulaire de contact',
     contactar: 'Contacter le support',
   },
+  numero: {
+    interpretado: '= {{valor}}',
+    ambiguo: '{{decimal}} ou {{miles}} ? Écrivez-le sans séparateur de milliers.',
+    invalido: 'Cela ne ressemble pas à un nombre.',
+  },
   errores: {
     sinApi: 'Cette fonction nécessite l’app de bureau',
     redFallo: 'Connexion impossible. Êtes-vous en ligne ?',

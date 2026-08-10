@@ -15,6 +15,9 @@ import { SeccionLicencia } from './SeccionLicencia'
 import { GestionEtiquetas } from './GestionEtiquetas'
 import { CorregirTcDof } from './CorregirTcDof'
 import { hoyIso } from '../../engine/fechas'
+import { numeroOUndefined } from '../../engine/numero'
+import { CampoNumero } from '../../ui/CampoNumero'
+import { CampoAjusteNumero } from '../../ui/CampoAjusteNumero'
 
 export function Configuracion() {
   const { t } = useTranslation()
@@ -83,8 +86,9 @@ export function Configuracion() {
 
   function agregarTipoCambio() {
     const m = nuevaMoneda.trim().toUpperCase()
-    if (!m || m === ajustes.monedaBase || !(Number(nuevoTc) > 0)) return
-    fijarTipoCambio(m, Number(nuevoTc))
+    const tc = numeroOUndefined(nuevoTc)
+    if (!m || m === ajustes.monedaBase || tc === undefined || !(tc > 0)) return
+    fijarTipoCambio(m, tc)
     setNuevaMoneda('')
     setNuevoTc('')
   }
@@ -139,35 +143,25 @@ export function Configuracion() {
         <div className="form-rejilla">
           <div className="campo">
             <label>{t('configuracion.tasaIsr')}</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={ajustes.tasaIsrAnual}
-              onChange={(e) => actualizarAjustes({ tasaIsrAnual: Number(e.target.value) || 0 })}
+            <CampoAjusteNumero
+              numero={ajustes.tasaIsrAnual}
+              alCambiar={(n) => actualizarAjustes({ tasaIsrAnual: n ?? 0 })}
+              ayuda={t('configuracion.tasaIsrAyuda')}
             />
-            <span className="ayuda">{t('configuracion.tasaIsrAyuda')}</span>
           </div>
           <div className="campo">
             <label>{t('configuracion.udiActual')}</label>
-            <input
-              type="number"
-              step="any"
-              min="0"
-              value={ajustes.udiActual ?? ''}
-              onChange={(e) =>
-                actualizarAjustes({ udiActual: e.target.value === '' ? undefined : Number(e.target.value) })
-              }
+            <CampoAjusteNumero
+              numero={ajustes.udiActual}
+              alCambiar={(n) => actualizarAjustes({ udiActual: n })}
               placeholder="8.35"
             />
           </div>
           <div className="campo">
             <label>{t('configuracion.diasAlerta')}</label>
-            <input
-              type="number"
-              min="1"
-              value={ajustes.diasAlertaVencimiento}
-              onChange={(e) => actualizarAjustes({ diasAlertaVencimiento: Number(e.target.value) || 30 })}
+            <CampoAjusteNumero
+              numero={ajustes.diasAlertaVencimiento}
+              alCambiar={(n) => actualizarAjustes({ diasAlertaVencimiento: n ?? 30 })}
             />
           </div>
         </div>
@@ -199,13 +193,10 @@ export function Configuracion() {
               <span className="chip" style={{ width: 52, justifyContent: 'center' }}>
                 {moneda}
               </span>
-              <input
-                type="number"
-                step="any"
-                min="0"
-                value={tc}
+              <CampoAjusteNumero
+                numero={tc}
+                alCambiar={(n) => n !== undefined && n > 0 && fijarTipoCambio(moneda, n)}
                 style={{ flex: 1 }}
-                onChange={(e) => Number(e.target.value) > 0 && fijarTipoCambio(moneda, Number(e.target.value))}
               />
             </div>
           ))}
@@ -217,15 +208,7 @@ export function Configuracion() {
               style={{ width: 80 }}
               onChange={(e) => setNuevaMoneda(e.target.value.toUpperCase())}
             />
-            <input
-              type="number"
-              step="any"
-              min="0"
-              placeholder="18.50"
-              value={nuevoTc}
-              style={{ flex: 1 }}
-              onChange={(e) => setNuevoTc(e.target.value)}
-            />
+            <CampoNumero valor={nuevoTc} alCambiar={setNuevoTc} placeholder="18.50" style={{ flex: 1 }} />
             <button className="btn" onClick={agregarTipoCambio}>
               {t('configuracion.agregarMoneda')}
             </button>

@@ -515,6 +515,11 @@ export const es = {
     copiado: 'Copiado al portapapeles — pégalo en el formulario de contacto',
     contactar: 'Contactar soporte',
   },
+  numero: {
+    interpretado: '= {{valor}}',
+    ambiguo: '¿{{decimal}} o {{miles}}? Escríbelo sin separador de miles.',
+    invalido: 'Esto no parece un número.',
+  },
   errores: {
     sinApi: 'Esta función necesita la app de escritorio',
     redFallo: 'No se pudo conectar. ¿Estás en línea?',

@@ -4,6 +4,8 @@ import { Modal } from '../../ui/Modal'
 import { useApp } from '../../state/store'
 import { useUi } from '../../state/ui'
 import { puedeAgregarEtiqueta } from '../../engine/etiquetas'
+import { numeroOUndefined } from '../../engine/numero'
+import { CampoNumero } from '../../ui/CampoNumero'
 import {
   GEOGRAFIAS,
   SECTORES_ACCION,
@@ -70,11 +72,11 @@ export function FormActivo({
     if (!nombre.trim()) e.nombre = t('formOperacion.requerido')
     if (!moneda.trim()) e.moneda = t('formOperacion.requerido')
     if (esRF) {
-      const tasa = Number(tasaAnual)
-      if (!tasaAnual || !(tasa > 0)) e.tasaAnual = t('formOperacion.mayorQueCero')
+      const tasa = numeroOUndefined(tasaAnual)
+      if (tasa === undefined || !(tasa > 0)) e.tasaAnual = t('formOperacion.mayorQueCero')
       if (!esFechaIsoValida(fechaInicio)) e.fechaInicio = t('formOperacion.fechaInvalida')
       if (!sinVencimiento && !esFechaIsoValida(fechaVencimiento)) e.fechaVencimiento = t('formOperacion.fechaInvalida')
-      if (instrumento === 'udibono' && udiInicial && !(Number(udiInicial) > 0))
+      if (instrumento === 'udibono' && udiInicial.trim() !== '' && !((numeroOUndefined(udiInicial) ?? 0) > 0))
         e.udiInicial = t('formOperacion.mayorQueCero')
     }
     setErrores(e)
@@ -87,12 +89,16 @@ export function FormActivo({
     if (esRF) {
       rentaFija = {
         instrumento,
-        tasaAnual: Number(tasaAnual),
+        tasaAnual: numeroOUndefined(tasaAnual) ?? 0,
         fechaInicio,
         ...(sinVencimiento ? {} : { fechaVencimiento }),
-        ...(esBono && valorNominal ? { valorNominal: Number(valorNominal) } : {}),
-        ...(instrumento === 'udibono' && udiInicial ? { udiInicial: Number(udiInicial) } : {}),
-        ...(tasaIsr !== '' ? { tasaIsr: Number(tasaIsr) } : {}),
+        ...(esBono && numeroOUndefined(valorNominal) !== undefined
+          ? { valorNominal: numeroOUndefined(valorNominal)! }
+          : {}),
+        ...(instrumento === 'udibono' && numeroOUndefined(udiInicial) !== undefined
+          ? { udiInicial: numeroOUndefined(udiInicial)! }
+          : {}),
+        ...(numeroOUndefined(tasaIsr) !== undefined ? { tasaIsr: numeroOUndefined(tasaIsr)! } : {}),
       }
     }
     if (existente) {
@@ -294,13 +300,10 @@ export function FormActivo({
             </div>
             <div className="campo">
               <label>{t('rentaFija.tasaAnual')} (%)</label>
-              <input
-                className={errores.tasaAnual ? 'invalido' : ''}
-                type="number"
-                step="0.01"
-                min="0"
-                value={tasaAnual}
-                onChange={(e) => setTasaAnual(e.target.value)}
+              <CampoNumero
+                valor={tasaAnual}
+                alCambiar={setTasaAnual}
+                invalido={!!errores.tasaAnual}
                 placeholder="10.25"
               />
               {errores.tasaAnual && <span className="error">{errores.tasaAnual}</span>}
@@ -332,18 +335,16 @@ export function FormActivo({
                 <label>
                   {t('rentaFija.valorNominal')} <span className="suave">({t('comunes.opcional')})</span>
                 </label>
-                <input type="number" step="any" value={valorNominal} onChange={(e) => setValorNominal(e.target.value)} placeholder="100" />
+                <CampoNumero valor={valorNominal} alCambiar={setValorNominal} placeholder="100" />
               </div>
             )}
             {instrumento === 'udibono' && (
               <div className="campo">
                 <label>{t('rentaFija.udiInicial')}</label>
-                <input
-                  className={errores.udiInicial ? 'invalido' : ''}
-                  type="number"
-                  step="any"
-                  value={udiInicial}
-                  onChange={(e) => setUdiInicial(e.target.value)}
+                <CampoNumero
+                  valor={udiInicial}
+                  alCambiar={setUdiInicial}
+                  invalido={!!errores.udiInicial}
                   placeholder="8.35"
                 />
                 {errores.udiInicial && <span className="error">{errores.udiInicial}</span>}
@@ -353,7 +354,7 @@ export function FormActivo({
               <label>
                 {t('rentaFija.tasaIsrPropia')} <span className="suave">({t('comunes.opcional')})</span>
               </label>
-              <input type="number" step="0.01" min="0" value={tasaIsr} onChange={(e) => setTasaIsr(e.target.value)} />
+              <CampoNumero valor={tasaIsr} alCambiar={setTasaIsr} />
             </div>
           </>
         )}

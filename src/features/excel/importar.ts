@@ -6,6 +6,7 @@
 
 import type { ClaseActivo, TipoOperacion } from '../../engine/tipos'
 import { esFechaIsoValida } from '../../engine/fechas'
+import { numeroOUndefined } from '../../engine/numero'
 
 export const CAMPOS_IMPORT = [
   'fecha',
@@ -125,13 +126,24 @@ export function celdaATexto(celda: unknown): string {
   return String(celda)
 }
 
+/**
+ * Lee una celda como numero.
+ *
+ * Usa `engine/numero.ts`, **el mismo parser que los campos de captura**. Antes
+ * tenia su propia regla ("coma seguida de 3 digitos = miles") y la MISMA cadena
+ * significaba cosas distintas segun entrara por teclado o por hoja de calculo.
+ * Una formula escrita dos veces ya costo cuatro auditorias en este repo
+ * (13.3, 14, 15.6, 16); esta era la quinta.
+ *
+ * Diferencia deliberada: aqui una cifra ambigua (`1,234`) se descarta en vez de
+ * preguntar. En un import por lotes no hay a quien preguntarle, y el importador
+ * ya reporta las filas que no pudo leer.
+ */
 function aNumero(celda: unknown): number | undefined {
   if (typeof celda === 'number') return Number.isFinite(celda) ? celda : undefined
-  const texto = celdaATexto(celda).replace(/\s/g, '').replace(/,(?=\d{3}\b)/g, '')
-  if (texto === '') return undefined
-  const numero = Number(texto.replace(',', '.'))
-  return Number.isFinite(numero) ? numero : undefined
+  return numeroOUndefined(celdaATexto(celda))
 }
+
 
 /** Fechas: Date de Excel, ISO, dd/mm/aaaa (México) o serial de Excel. */
 export function aFechaIso(celda: unknown): string | undefined {

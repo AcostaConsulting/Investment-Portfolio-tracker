@@ -8,6 +8,8 @@ import { tcDofHistorico } from '../../servicios/tcDof'
 import type { Activo, Operacion, TipoOperacion } from '../../engine/tipos'
 import { OPERACIONES_EFECTIVO } from '../../engine/tipos'
 import { esFechaIsoValida, hoyIso } from '../../engine/fechas'
+import { numeroOUndefined } from '../../engine/numero'
+import { CampoNumero } from '../../ui/CampoNumero'
 
 const TIPOS: TipoOperacion[] = [
   'compra',
@@ -117,6 +119,22 @@ export function FormOperacion({
     }
   }, [esBase, usarTcFecha, fecha, moneda, monedaBase])
 
+  /**
+   * Lee un campo con la regla compartida de `engine/numero.ts`, no con
+   * `Number()`: `Number('1,5')` da NaN y `<input type="number">` daba 15
+   * (AUDITORIA-ROBUSTEZ.md #4). `undefined` = vacío, ambiguo o ilegible; el
+   * campo ya explica cuál de los tres.
+   */
+  const leer = (texto: string): number | undefined => numeroOUndefined(texto)
+
+  /**
+   * Mensaje para un campo que no se pudo leer. Si está en blanco, es que falta;
+   * si tiene algo escrito, `CampoNumero` ya explica POR QUÉ no se pudo leer
+   * (ambiguo o ilegible) y repetirlo aquí sólo apila dos avisos. Devuelve
+   * cadena vacía: bloquea el guardado sin pintar un segundo mensaje.
+   */
+  const sinLeer = (texto: string): string => (texto.trim() === '' ? t('formOperacion.requerido') : '')
+
   const esEfectivo = OPERACIONES_EFECTIVO.has(tipo)
   const esAjuste = tipo === 'ajuste'
 
@@ -125,20 +143,23 @@ export function FormOperacion({
     if (!activoId) e.activoId = t('formOperacion.sinActivos')
     if (!esFechaIsoValida(fecha)) e.fecha = t('formOperacion.fechaInvalida')
     if (esEfectivo) {
-      // Dividendo/interés: solo importa el importe en efectivo.
-      const im = Number(importe)
-      if (importe === '' || Number.isNaN(im) || im <= 0) e.importe = t('formOperacion.mayorQueCero')
+      const im = leer(importe)
+      if (im === undefined) e.importe = sinLeer(importe)
+      else if (im <= 0) e.importe = t('formOperacion.mayorQueCero')
     } else {
-      const c = Number(cantidad)
-      if (cantidad === '' || Number.isNaN(c)) e.cantidad = t('formOperacion.requerido')
+      const c = leer(cantidad)
+      if (c === undefined) e.cantidad = sinLeer(cantidad)
       else if (esAjuste ? c === 0 : c <= 0) e.cantidad = esAjuste ? t('formOperacion.distintoDeCero') : t('formOperacion.mayorQueCero')
-      const p = Number(precio)
-      if (precio === '' || Number.isNaN(p) || p < 0) e.precio = t('formOperacion.requerido')
+      const p = leer(precio)
+      if (p === undefined) e.precio = sinLeer(precio)
+      else if (p < 0) e.precio = t('formOperacion.requerido')
     }
     if (!moneda.trim()) e.moneda = t('formOperacion.requerido')
-    const tc = Number(tipoCambio)
-    if (tipoCambio === '' || !(tc > 0)) e.tipoCambio = t('formOperacion.mayorQueCero')
-    if (comision !== '' && Number(comision) < 0) e.comision = t('formOperacion.mayorQueCero')
+    const tc = leer(tipoCambio)
+    if (tc === undefined) e.tipoCambio = sinLeer(tipoCambio)
+    else if (!(tc > 0)) e.tipoCambio = t('formOperacion.mayorQueCero')
+    const com = leer(comision)
+    if (comision.trim() !== '' && (com === undefined || com < 0)) e.comision = t('formOperacion.mayorQueCero')
     setErrores(e)
     return Object.keys(e).length === 0
   }
@@ -150,12 +171,12 @@ export function FormOperacion({
       activoId,
       tipo,
       fecha,
-      cantidad: esEfectivo ? 0 : Number(cantidad),
-      precioUnitario: esEfectivo ? 0 : Number(precio),
+      cantidad: esEfectivo ? 0 : (leer(cantidad) ?? 0),
+      precioUnitario: esEfectivo ? 0 : (leer(precio) ?? 0),
       moneda: moneda.trim().toUpperCase(),
-      tipoCambio: Number(tipoCambio),
-      ...(esEfectivo ? { importeEfectivo: Number(importe) } : {}),
-      ...(comision !== '' && Number(comision) > 0 ? { comision: Number(comision) } : {}),
+      tipoCambio: leer(tipoCambio) ?? 1,
+      ...(esEfectivo ? { importeEfectivo: leer(importe) ?? 0 } : {}),
+      ...((leer(comision) ?? 0) > 0 ? { comision: leer(comision)! } : {}),
       ...(nota.trim() ? { nota: nota.trim() } : {}),
     }
     guardarOperacion(operacion)
@@ -225,47 +246,29 @@ export function FormOperacion({
           {esEfectivo ? (
             <div className="campo">
               <label>{t('comunes.importe')}</label>
-              <input
-                className={errores.importe ? 'invalido' : ''}
-                type="number"
-                step="any"
-                min="0"
-                value={importe}
-                onChange={(e) => setImporte(e.target.value)}
+              <CampoNumero
+                valor={importe}
+                alCambiar={setImporte}
+                invalido={!!errores.importe}
+                ayuda={t('formOperacion.importeAyudaEfectivo')}
               />
-              {errores.importe ? (
-                <span className="error">{errores.importe}</span>
-              ) : (
-                <span className="ayuda">{t('formOperacion.importeAyudaEfectivo')}</span>
-              )}
+              {errores.importe && <span className="error">{errores.importe}</span>}
             </div>
           ) : (
             <>
               <div className="campo">
                 <label>{t('comunes.cantidad')}</label>
-                <input
-                  className={errores.cantidad ? 'invalido' : ''}
-                  type="number"
-                  step="any"
-                  value={cantidad}
-                  onChange={(e) => setCantidad(e.target.value)}
+                <CampoNumero
+                  valor={cantidad}
+                  alCambiar={setCantidad}
+                  invalido={!!errores.cantidad}
+                  ayuda={esAjuste ? t('formOperacion.cantidadAjusteAyuda') : undefined}
                 />
-                {errores.cantidad ? (
-                  <span className="error">{errores.cantidad}</span>
-                ) : esAjuste ? (
-                  <span className="ayuda">{t('formOperacion.cantidadAjusteAyuda')}</span>
-                ) : null}
+                {errores.cantidad && <span className="error">{errores.cantidad}</span>}
               </div>
               <div className="campo">
                 <label>{t('formOperacion.precioUnitario')}</label>
-                <input
-                  className={errores.precio ? 'invalido' : ''}
-                  type="number"
-                  step="any"
-                  min="0"
-                  value={precio}
-                  onChange={(e) => setPrecio(e.target.value)}
-                />
+                <CampoNumero valor={precio} alCambiar={setPrecio} invalido={!!errores.precio} />
                 {errores.precio && <span className="error">{errores.precio}</span>}
               </div>
             </>
@@ -295,15 +298,13 @@ export function FormOperacion({
                 />
                 {t('formOperacion.usarTcFecha')}
               </label>
-              <input
-                className={errores.tipoCambio ? 'invalido' : ''}
-                type="number"
-                step="any"
-                value={tipoCambio}
-                onChange={(e) => {
-                  setTipoCambio(e.target.value)
+              <CampoNumero
+                valor={tipoCambio}
+                alCambiar={(texto) => {
+                  setTipoCambio(texto)
                   setUsarTcFecha(false)
                 }}
+                invalido={!!errores.tipoCambio}
                 placeholder={tcEstado === 'cargando' ? '…' : undefined}
               />
               {errores.tipoCambio ? (
@@ -326,14 +327,7 @@ export function FormOperacion({
             <label>
               {t('comunes.comision')} <span className="suave">({t('comunes.opcional')})</span>
             </label>
-            <input
-              className={errores.comision ? 'invalido' : ''}
-              type="number"
-              step="any"
-              min="0"
-              value={comision}
-              onChange={(e) => setComision(e.target.value)}
-            />
+            <CampoNumero valor={comision} alCambiar={setComision} invalido={!!errores.comision} />
             {errores.comision && <span className="error">{errores.comision}</span>}
           </div>
           <div className="campo ancho-completo">

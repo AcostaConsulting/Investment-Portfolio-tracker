@@ -166,6 +166,33 @@ describe('convertirFilas', () => {
     expect(errores).toHaveLength(1)
   })
 
+  it('lee decimales escritos con coma, como los escribe media Latinoamérica', () => {
+    // Antes esta fila entraba como 1.5 sólo por casualidad: `aNumero` tenía su
+    // propia regla. Ahora usa el MISMO parser que los campos de captura.
+    const { validas } = convertirFilas(
+      [['2026-01-10', 'BTC', 'compra', '0,5', '1250000,50', 'MXN', 1]],
+      mapeo,
+      'MXN',
+      new Set(),
+    )
+    expect(validas[0]?.cantidad).toBeCloseTo(0.5, 9)
+    expect(validas[0]?.precioUnitario).toBeCloseTo(1_250_000.5, 6)
+  })
+
+  it('🔴 descarta la fila cuando la cifra es AMBIGUA en vez de adivinar', () => {
+    // "1,234" puede ser 1.234 o 1234. En un import por lotes no hay a quién
+    // preguntarle, así que la fila se reporta como error en vez de entrar con
+    // un número que nadie eligió (AUDITORIA-ROBUSTEZ.md #4).
+    const { validas, errores } = convertirFilas(
+      [['2026-01-10', 'AAPL', 'compra', '1,234', '100', 'MXN', 1]],
+      mapeo,
+      'MXN',
+      new Set(),
+    )
+    expect(validas).toHaveLength(0)
+    expect(errores).toHaveLength(1)
+  })
+
   it('limpia números con separador de miles', () => {
     const { validas } = convertirFilas(
       [['2026-01-10', 'BTC', 'compra', '0.5', '1,250,000.50', 'MXN', 1]],

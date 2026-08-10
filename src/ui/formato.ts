@@ -33,6 +33,19 @@ export function formatoCantidad(valor: number): string {
   return new Intl.NumberFormat(locale(), { maximumFractionDigits: 8 }).format(valor)
 }
 
+/**
+ * Cantidad SIN separador de miles.
+ *
+ * Existe para la pregunta de desambiguación de `CampoNumero`: al ofrecer las
+ * dos lecturas de `1,234` con agrupación, la opción "mil doscientos treinta y
+ * cuatro" se renderiza otra vez como `1,234` y la pregunta queda absurda
+ * ("¿1.234 o 1,234?"). Sin agrupación dice lo que tiene que decir: **¿1.234 o
+ * 1234?**. Se vio en pantalla, no en el código.
+ */
+export function formatoCantidadSinGrupos(valor: number): string {
+  return new Intl.NumberFormat(locale(), { maximumFractionDigits: 8, useGrouping: false }).format(valor)
+}
+
 export function formatoPct(valor: number, conSigno = false): string {
   const texto = new Intl.NumberFormat(locale(), {
     minimumFractionDigits: 2,

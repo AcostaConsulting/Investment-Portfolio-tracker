@@ -1,25 +1,30 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Modal } from '../../ui/Modal'
+import { numeroOUndefined } from '../../engine/numero'
+import { CampoNumero } from '../../ui/CampoNumero'
 import { useApp } from '../../state/store'
 import type { Posicion } from '../../engine/portafolio'
 
 /** Alta rápida de alerta piso/techo desde la fila de Posiciones. */
+/** Lee un campo con la regla compartida de `engine/numero.ts` (AUDITORIA-ROBUSTEZ.md #4). */
+const num = (texto: string): number => numeroOUndefined(texto) ?? 0
+
 export function AlertaPrecioModal({ posicion, alCerrar }: { posicion: Posicion; alCerrar: () => void }) {
   const { t } = useTranslation()
   const guardarAlertaPrecio = useApp((s) => s.guardarAlertaPrecio)
   const [min, setMin] = useState('')
   const [max, setMax] = useState('')
 
-  const valida = Number(min) > 0 || Number(max) > 0
+  const valida = num(min) > 0 || num(max) > 0
 
   function guardar() {
     if (!valida) return
     guardarAlertaPrecio({
       id: crypto.randomUUID(),
       activoId: posicion.activo.id,
-      ...(Number(min) > 0 ? { precioMin: Number(min) } : {}),
-      ...(Number(max) > 0 ? { precioMax: Number(max) } : {}),
+      ...(num(min) > 0 ? { precioMin: num(min) } : {}),
+      ...(num(max) > 0 ? { precioMax: num(max) } : {}),
       activa: true,
     })
     alCerrar()
@@ -46,13 +51,13 @@ export function AlertaPrecioModal({ posicion, alCerrar }: { posicion: Posicion; 
           <label>
             {t('alertasPrecio.precioMin')} ({posicion.activo.moneda})
           </label>
-          <input type="number" step="any" min="0" value={min} onChange={(e) => setMin(e.target.value)} autoFocus />
+          <CampoNumero valor={min} alCambiar={setMin} autoFocus />
         </div>
         <div className="campo">
           <label>
             {t('alertasPrecio.precioMax')} ({posicion.activo.moneda})
           </label>
-          <input type="number" step="any" min="0" value={max} onChange={(e) => setMax(e.target.value)} />
+          <CampoNumero valor={max} alCambiar={setMax} />
         </div>
       </div>
     </Modal>

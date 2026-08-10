@@ -512,6 +512,11 @@ export const en: Diccionario = {
     copiado: 'Copied to clipboard — paste it into the contact form',
     contactar: 'Contact support',
   },
+  numero: {
+    interpretado: '= {{valor}}',
+    ambiguo: 'Did you mean {{decimal}} or {{miles}}? Write it without a thousands separator.',
+    invalido: 'That does not look like a number.',
+  },
   errores: {
     sinApi: 'This feature needs the desktop app',
     redFallo: 'Could not connect. Are you online?',

@@ -6,6 +6,8 @@ import { usePortafolio } from '../../state/selectores'
 import { Cifra, Porcentaje } from '../../ui/Cifra'
 import { Icono } from '../../ui/Icono'
 import { Modal } from '../../ui/Modal'
+import { numeroOUndefined } from '../../engine/numero'
+import { CampoNumero } from '../../ui/CampoNumero'
 import { formatoCantidad, formatoFecha, formatoMoneda } from '../../ui/formato'
 import { hoyIso } from '../../engine/fechas'
 import { tieneCapacidad } from '../../licencias/planes'
@@ -13,6 +15,9 @@ import type { Posicion } from '../../engine/portafolio'
 import { ordenarPosiciones, type ColumnaOrden, type DireccionOrden } from './orden'
 import { AlertaPrecioModal } from '../analisis/AlertaPrecioModal'
 import { exportarExcel } from '../excel/exportar'
+
+/** Lee un campo con la regla compartida de `engine/numero.ts` (AUDITORIA-ROBUSTEZ.md #4). */
+const num = (texto: string): number => numeroOUndefined(texto) ?? 0
 
 export function Posiciones() {
   const { t } = useTranslation()
@@ -62,9 +67,9 @@ export function Posiciones() {
   }
 
   function guardarPrecio() {
-    if (!capturando || !(Number(precio) > 0)) return
+    if (!capturando || !(num(precio) > 0)) return
     fijarPrecio(capturando.activo.id, {
-      precio: Number(precio),
+      precio: num(precio),
       moneda: monedaPrecio.trim().toUpperCase() || capturando.activo.moneda,
       actualizado: hoyIso(),
     })
@@ -303,7 +308,7 @@ export function Posiciones() {
               <button className="btn" onClick={() => setCapturando(undefined)}>
                 {t('comunes.cancelar')}
               </button>
-              <button className="btn btn-primario" onClick={guardarPrecio} disabled={!(Number(precio) > 0)}>
+              <button className="btn btn-primario" onClick={guardarPrecio} disabled={!(num(precio) > 0)}>
                 {t('comunes.guardar')}
               </button>
             </>
@@ -312,7 +317,7 @@ export function Posiciones() {
           <div className="form-rejilla">
             <div className="campo">
               <label>{t('posiciones.precioActual')}</label>
-              <input type="number" step="any" min="0" value={precio} onChange={(e) => setPrecio(e.target.value)} autoFocus />
+              <CampoNumero valor={precio} alCambiar={setPrecio} autoFocus />
             </div>
             <div className="campo">
               <label>{t('comunes.moneda')}</label>

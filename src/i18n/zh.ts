@@ -511,6 +511,11 @@ export const zh: Diccionario = {
     copiado: '已复制 — 请粘贴到联系表单',
     contactar: '联系客服',
   },
+  numero: {
+    interpretado: '= {{valor}}',
+    ambiguo: '你是指 {{decimal}} 还是 {{miles}}？请不要使用千位分隔符。',
+    invalido: '这看起来不像是一个数字。',
+  },
   errores: {
     sinApi: '此功能需要桌面应用',
     redFallo: '无法连接。请检查网络。',

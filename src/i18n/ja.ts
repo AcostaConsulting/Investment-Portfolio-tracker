@@ -512,6 +512,11 @@ export const ja: Diccionario = {
     copiado: 'コピーしました — お問い合わせフォームに貼り付けてください',
     contactar: 'サポートに連絡',
   },
+  numero: {
+    interpretado: '= {{valor}}',
+    ambiguo: '{{decimal}} と {{miles}} のどちらですか？桁区切りなしで入力してください。',
+    invalido: '数値として読み取れません。',
+  },
   errores: {
     sinApi: 'この機能はデスクトップアプリが必要です',
     redFallo: '接続できませんでした。オンラインですか？',
