@@ -519,6 +519,36 @@ export const es = {
     sinApi: 'Esta función necesita la app de escritorio',
     redFallo: 'No se pudo conectar. ¿Estás en línea?',
   },
+  guardado: {
+    fallo: 'No se pudo guardar tus cambios.',
+    falloBloqueado: 'Otro programa tiene el archivo abierto — suele ser la sincronización de la nube o el antivirus.',
+    falloPermiso: 'Windows no dejó escribir el archivo: puede estar como solo lectura o abierto por otro programa.',
+    falloSoloLectura: 'El archivo de datos está marcado como de solo lectura.',
+    falloSinEspacio: 'No queda espacio en el disco.',
+    falloDetalle: 'El sistema respondió: {{error}}',
+    guardarCopia: 'Guardar una copia…',
+    copiaGuardada: 'Copia guardada en {{ruta}}',
+  },
+  recuperacion: {
+    titulo: 'No pudimos leer tu portafolio',
+    explicacionIlegible:
+      'El archivo de datos existe, pero no se pudo abrir: puede haberse cortado a medio guardar. No hemos modificado nada.',
+    explicacionForma:
+      'El archivo se abrió, pero su contenido no tiene la forma que la app espera ({{campos}}). No hemos modificado nada.',
+    copiaEn: 'Guardamos una copia de tu archivo original aquí:',
+    noSeGuarda: 'Mientras esta pantalla esté abierta, la app no escribe nada en el disco.',
+    elegirRespaldo: 'Elige un respaldo para restaurar',
+    sinRespaldos: 'No hay respaldos que se puedan leer.',
+    contenido: '{{activos}} activos · {{operaciones}} operaciones',
+    restaurar: 'Restaurar',
+    restaurando: 'Restaurando…',
+    errorRestaurar: 'Ese respaldo tampoco se pudo leer. Prueba con otro.',
+    ningunoSirve: '¿Ninguno sirve?',
+    empezarDeCero: 'Empezar de cero',
+    confirmarTexto:
+      'Tu archivo original se conserva en la copia de arriba. La app empezará sin activos ni operaciones. ¿Continuar?',
+    confirmarSi: 'Sí, empezar de cero',
+  },
 } as const
 
 /** Estructura del diccionario con valores ensanchados a string (para las traducciones). */

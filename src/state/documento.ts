@@ -110,28 +110,85 @@ export function documentoInicial(): DocumentoStore {
   }
 }
 
+/** Campos que el motor recorre con `for…of`: si no son arreglos, la app truena. */
+const CONTENEDORES_ARREGLO = [
+  'activos',
+  'operaciones',
+  'etiquetas',
+  'metas',
+  'alertasPrecio',
+  'benchmarks',
+  'historico',
+] as const
+
+/** Campos que se indexan por clave. */
+const CONTENEDORES_OBJETO = ['precios', 'tiposCambio', 'ajustes'] as const
+
+function esObjetoLlano(v: unknown): boolean {
+  return typeof v === 'object' && v !== null && !Array.isArray(v)
+}
+
+/**
+ * Revisa que el documento tenga la FORMA esperada, antes de migrarlo.
+ *
+ * Existe por el hallazgo #7 de la auditoría: un JSON perfectamente válido con
+ * `activos: "texto"` y `operaciones: 42` pasaba entero —`?? []` solo atrapa
+ * `null`/`undefined`, no un tipo equivocado— y el motor reventaba con
+ * *"t is not iterable"* dejando **la ventana en blanco, sin un solo mensaje**.
+ *
+ * Devuelve la lista de campos con forma incorrecta; vacía significa que el
+ * documento es utilizable. No repara nada: reparar en silencio es justo lo que
+ * convertiría un documento raro en pérdida de datos.
+ */
+export function revisarForma(crudo: unknown): string[] {
+  if (!esObjetoLlano(crudo)) return ['documento']
+  const doc = crudo as Record<string, unknown>
+  const problemas: string[] = []
+  for (const clave of CONTENEDORES_ARREGLO) {
+    if (doc[clave] !== undefined && !Array.isArray(doc[clave])) problemas.push(clave)
+  }
+  for (const clave of CONTENEDORES_OBJETO) {
+    if (doc[clave] !== undefined && !esObjetoLlano(doc[clave])) problemas.push(clave)
+  }
+  return problemas
+}
+
+/** Solo los elementos que son objetos: un `null` suelto en la lista basta para tronar una vista. */
+function soloObjetos<T>(v: unknown): T[] {
+  return Array.isArray(v) ? (v.filter(esObjetoLlano) as T[]) : []
+}
+
+function soloMapa<T>(v: unknown): Record<string, T> {
+  return esObjetoLlano(v) ? (v as Record<string, T>) : {}
+}
+
 /**
  * Normaliza un documento leído de disco o de un respaldo: rellena campos
  * que no existían en versiones anteriores sin tocar los datos del usuario.
+ *
+ * Es defensivo a propósito —nunca devuelve algo que el motor no pueda
+ * recorrer—, pero **la decisión de si un documento es utilizable NO se toma
+ * aquí**: eso es `revisarForma`, y quien carga debe llamarla antes. Si se
+ * llega aquí con basura, se degrada en vez de tronar.
  */
 export function migrarDocumento(crudo: unknown): DocumentoStore {
   const base = documentoInicial()
-  if (typeof crudo !== 'object' || crudo === null) return base
+  if (!esObjetoLlano(crudo)) return base
   const doc = crudo as Partial<DocumentoStore>
   return {
     ...base,
     ...doc,
     version: 1,
-    ajustes: { ...base.ajustes, ...(doc.ajustes ?? {}) },
-    activos: doc.activos ?? [],
-    operaciones: doc.operaciones ?? [],
-    precios: doc.precios ?? {},
-    tiposCambio: doc.tiposCambio ?? {},
-    etiquetas: doc.etiquetas ?? [],
-    metas: (doc.metas ?? []).map(migrarMeta),
-    alertasPrecio: (doc.alertasPrecio ?? []).map(migrarAlerta),
-    benchmarks: doc.benchmarks ?? [],
-    historico: doc.historico ?? [],
+    ajustes: { ...base.ajustes, ...soloMapa(doc.ajustes) },
+    activos: soloObjetos(doc.activos),
+    operaciones: soloObjetos(doc.operaciones),
+    precios: soloMapa(doc.precios),
+    tiposCambio: soloMapa(doc.tiposCambio),
+    etiquetas: soloObjetos(doc.etiquetas),
+    metas: soloObjetos<Meta>(doc.metas).map(migrarMeta),
+    alertasPrecio: soloObjetos<AlertaPrecio>(doc.alertasPrecio).map(migrarAlerta),
+    benchmarks: soloObjetos(doc.benchmarks),
+    historico: soloObjetos(doc.historico),
   }
 }
 

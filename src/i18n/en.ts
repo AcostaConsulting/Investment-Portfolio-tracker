@@ -516,4 +516,34 @@ export const en: Diccionario = {
     sinApi: 'This feature needs the desktop app',
     redFallo: 'Could not connect. Are you online?',
   },
+  guardado: {
+    fallo: 'Your changes could not be saved.',
+    falloBloqueado: 'Another program has the file open — usually cloud sync or antivirus software.',
+    falloPermiso: 'Windows would not let us write the file: it may be read-only or open in another program.',
+    falloSoloLectura: 'The data file is marked as read-only.',
+    falloSinEspacio: 'There is no space left on the disk.',
+    falloDetalle: 'The system replied: {{error}}',
+    guardarCopia: 'Save a copy…',
+    copiaGuardada: 'Copy saved to {{ruta}}',
+  },
+  recuperacion: {
+    titulo: 'We could not read your portfolio',
+    explicacionIlegible:
+      'The data file exists but could not be opened — it may have been cut off mid-save. Nothing has been changed.',
+    explicacionForma:
+      'The file opened, but its contents are not shaped the way the app expects ({{campos}}). Nothing has been changed.',
+    copiaEn: 'We saved a copy of your original file here:',
+    noSeGuarda: 'While this screen is open, the app writes nothing to disk.',
+    elegirRespaldo: 'Choose a backup to restore',
+    sinRespaldos: 'There are no readable backups.',
+    contenido: '{{activos}} assets · {{operaciones}} transactions',
+    restaurar: 'Restore',
+    restaurando: 'Restoring…',
+    errorRestaurar: 'That backup could not be read either. Try another one.',
+    ningunoSirve: 'None of them work?',
+    empezarDeCero: 'Start fresh',
+    confirmarTexto:
+      'Your original file is kept in the copy above. The app will start with no assets and no transactions. Continue?',
+    confirmarSi: 'Yes, start fresh',
+  },
 }

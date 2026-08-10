@@ -516,4 +516,34 @@ export const ja: Diccionario = {
     sinApi: 'この機能はデスクトップアプリが必要です',
     redFallo: '接続できませんでした。オンラインですか？',
   },
+  guardado: {
+    fallo: '変更を保存できませんでした。',
+    falloBloqueado: '他のプログラムがファイルを開いています — 多くはクラウド同期かウイルス対策ソフトです。',
+    falloPermiso: 'Windows がファイルへの書き込みを拒否しました。読み取り専用か、他のプログラムが開いている可能性があります。',
+    falloSoloLectura: 'データファイルが読み取り専用になっています。',
+    falloSinEspacio: 'ディスクの空き容量がありません。',
+    falloDetalle: 'システムの応答：{{error}}',
+    guardarCopia: 'コピーを保存…',
+    copiaGuardada: 'コピーを {{ruta}} に保存しました',
+  },
+  recuperacion: {
+    titulo: 'ポートフォリオを読み込めませんでした',
+    explicacionIlegible:
+      'データファイルは存在しますが開けませんでした。保存の途中で中断された可能性があります。何も変更していません。',
+    explicacionForma:
+      'ファイルは開けましたが、内容がアプリの想定する形式ではありません（{{campos}}）。何も変更していません。',
+    copiaEn: '元のファイルのコピーをここに保存しました：',
+    noSeGuarda: 'この画面を開いている間、アプリはディスクに一切書き込みません。',
+    elegirRespaldo: '復元するバックアップを選んでください',
+    sinRespaldos: '読み取れるバックアップがありません。',
+    contenido: '資産 {{activos}} 件 · 取引 {{operaciones}} 件',
+    restaurar: '復元',
+    restaurando: '復元中…',
+    errorRestaurar: 'このバックアップも読み取れませんでした。別のものをお試しください。',
+    ningunoSirve: 'どれも使えませんか？',
+    empezarDeCero: '最初から始める',
+    confirmarTexto:
+      '元のファイルは上のコピーに保存されています。アプリは資産も取引もない状態で始まります。続けますか？',
+    confirmarSi: 'はい、最初から始めます',
+  },
 }

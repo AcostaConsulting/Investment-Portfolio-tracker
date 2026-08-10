@@ -1019,3 +1019,97 @@ tr:hover .fila-acciones {
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* ---------- persistencia: aviso de guardado fallido y recuperación ---------- */
+
+/* Persistente a propósito: un aviso que se puede cerrar es el que no se lee.
+   Ver AUDITORIA-ROBUSTEZ.md §1.2 — el guardado fallaba en absoluto silencio. */
+.barra-guardado {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--loss);
+  border-left-width: 3px;
+  border-radius: var(--radio);
+  background: var(--loss-subtle);
+  color: var(--text-primary);
+}
+
+.barra-guardado > svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--loss);
+}
+
+.barra-guardado-texto {
+  flex: 1;
+  min-width: 0;
+}
+
+.barra-guardado-ruta {
+  color: var(--text-secondary);
+  word-break: break-all;
+}
+
+.recuperacion-tarjeta {
+  max-width: 640px;
+  text-align: left;
+}
+
+.recuperacion-encabezado {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--loss);
+}
+
+.recuperacion-encabezado h2 {
+  margin: 0;
+}
+
+.recuperacion-copia code {
+  display: block;
+  margin-top: 4px;
+  padding: 6px 8px;
+  border-radius: var(--radio);
+  background: var(--surface-2);
+  font-family: var(--f-mono);
+  font-size: 11px;
+  word-break: break-all;
+}
+
+.recuperacion-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.recuperacion-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.recuperacion-fila:last-child {
+  border-bottom: none;
+}
+
+.recuperacion-salida,
+.recuperacion-confirmar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.recuperacion-confirmar {
+  flex-direction: column;
+  align-items: stretch;
+}

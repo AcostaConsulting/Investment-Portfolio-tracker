@@ -516,4 +516,35 @@ export const fr: Diccionario = {
     sinApi: 'Cette fonction nécessite l’app de bureau',
     redFallo: 'Connexion impossible. Êtes-vous en ligne ?',
   },
+  guardado: {
+    fallo: 'Vos modifications n’ont pas pu être enregistrées.',
+    falloBloqueado:
+      'Un autre programme garde le fichier ouvert — souvent la synchronisation cloud ou l’antivirus.',
+    falloPermiso: 'Windows a refusé l’écriture du fichier : il est peut-être en lecture seule ou ouvert ailleurs.',
+    falloSoloLectura: 'Le fichier de données est en lecture seule.',
+    falloSinEspacio: 'Il n’y a plus d’espace sur le disque.',
+    falloDetalle: 'Le système a répondu : {{error}}',
+    guardarCopia: 'Enregistrer une copie…',
+    copiaGuardada: 'Copie enregistrée dans {{ruta}}',
+  },
+  recuperacion: {
+    titulo: 'Nous n’avons pas pu lire votre portefeuille',
+    explicacionIlegible:
+      'Le fichier de données existe mais n’a pas pu être ouvert : il a peut-être été coupé pendant l’enregistrement. Rien n’a été modifié.',
+    explicacionForma:
+      'Le fichier s’est ouvert, mais son contenu n’a pas la forme attendue par l’app ({{campos}}). Rien n’a été modifié.',
+    copiaEn: 'Nous avons enregistré une copie de votre fichier d’origine ici :',
+    noSeGuarda: 'Tant que cet écran est ouvert, l’app n’écrit rien sur le disque.',
+    elegirRespaldo: 'Choisissez une sauvegarde à restaurer',
+    sinRespaldos: 'Aucune sauvegarde lisible.',
+    contenido: '{{activos}} actifs · {{operaciones}} opérations',
+    restaurar: 'Restaurer',
+    restaurando: 'Restauration…',
+    errorRestaurar: 'Cette sauvegarde non plus n’a pas pu être lue. Essayez-en une autre.',
+    ningunoSirve: 'Aucune ne convient ?',
+    empezarDeCero: 'Repartir de zéro',
+    confirmarTexto:
+      'Votre fichier d’origine est conservé dans la copie ci-dessus. L’app démarrera sans actif ni opération. Continuer ?',
+    confirmarSi: 'Oui, repartir de zéro',
+  },
 }

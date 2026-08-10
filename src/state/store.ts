@@ -9,6 +9,7 @@ import type { Activo, Operacion, PrecioActual } from '../engine/tipos'
 import {
   documentoInicial,
   migrarDocumento,
+  revisarForma,
   type Ajustes,
   type AlertaPrecio,
   type BenchmarkManual,
@@ -28,6 +29,8 @@ import { aplicarCorrecciones, type CorreccionTc } from '../engine/correccionTcDo
 import { planEfectivo, validarLicencia, type EstadoLicencia } from '../licencias/validar'
 import { crearDatosEjemplo } from './ejemplo'
 import type { Plan } from '../licencias/planes'
+import type { ResumenRespaldo } from '../shared/api'
+import { textoABase64 } from '../servicios/respaldo'
 import { hoyIso } from '../engine/fechas'
 import llavePublicaPem from '../licencias/llave-publica.pem?raw'
 
@@ -35,12 +38,72 @@ const RETRASO_GUARDADO_MS = 600
 
 let temporizadorGuardado: ReturnType<typeof setTimeout> | undefined
 let cargaEnCurso = false
+let docPendiente: DocumentoStore | undefined
+/**
+ * Mientras la pantalla de recuperación no se resuelva no se escribe NADA a
+ * disco. Es lo que impide que un clic cualquiera sobrescriba un documento que
+ * no se pudo leer — el corazón del hallazgo #3.
+ */
+let guardadoBloqueado = false
+
+async function escribirAhora(doc: DocumentoStore): Promise<void> {
+  const r = await window.api?.almacen.guardar(doc)
+  // Antes esto era `void ...guardar(doc)`: el rechazo se descartaba y guardar
+  // contra un archivo bloqueado o de solo lectura fallaba en absoluto silencio
+  // (AUDITORIA-ROBUSTEZ.md §1.2). Ahora el fallo llega al estado y a la UI.
+  if (r && r.ok === false) {
+    useApp.setState({ errorGuardado: { codigo: r.codigo, error: r.error, ruta: r.ruta } })
+  } else if (r && r.ok) {
+    if (useApp.getState().errorGuardado) useApp.setState({ errorGuardado: undefined })
+  }
+}
+
+/** Vacía el guardado pendiente sin esperar al debounce. */
+async function vaciarPendiente(): Promise<void> {
+  clearTimeout(temporizadorGuardado)
+  temporizadorGuardado = undefined
+  const doc = docPendiente
+  docPendiente = undefined
+  if (doc) await escribirAhora(doc)
+}
 
 function persistir(doc: DocumentoStore) {
+  if (guardadoBloqueado) return
+  docPendiente = doc
   clearTimeout(temporizadorGuardado)
   temporizadorGuardado = setTimeout(() => {
-    void window.api?.almacen.guardar(doc)
+    void vaciarPendiente()
   }, RETRASO_GUARDADO_MS)
+}
+
+/**
+ * Main retiene el cierre de la ventana y pide esto; al contestar, se cierra.
+ * Sin ello se perdía lo capturado en los últimos 600 ms (hallazgo #8).
+ */
+function atenderFlushAlCerrar(): void {
+  window.api?.almacen.alPedirFlush(() => {
+    void vaciarPendiente().finally(() => window.api?.almacen.flushListo())
+  })
+}
+
+/**
+ * El documento de disco no se pudo usar. La app NO arranca como primer uso ni
+ * escribe nada: enseña la pantalla de recuperación y espera al usuario.
+ */
+export interface EstadoRecuperacion {
+  /** `ilegible`: no parsea. `forma`: parsea pero tiene campos con forma inválida. */
+  motivo: 'ilegible' | 'forma'
+  detalle: string
+  bytes: number
+  /** Dónde quedó la copia del archivo original. Se hace ANTES de mostrar nada. */
+  copia: string | null
+  respaldos: ResumenRespaldo[]
+}
+
+export interface ErrorGuardado {
+  codigo: string
+  error: string
+  ruta: string
 }
 
 export interface EstadoApp {
@@ -48,9 +111,20 @@ export interface EstadoApp {
   doc: DocumentoStore
   licenciaEstado?: EstadoLicencia
   plan: Plan
+  /** Presente = la app está en modo recuperación y no escribe a disco. */
+  recuperacion?: EstadoRecuperacion
+  /** Presente = el último guardado falló y el usuario tiene que enterarse. */
+  errorGuardado?: ErrorGuardado
 
   inicializar(): Promise<void>
   mutarDoc(cambia: (doc: DocumentoStore) => DocumentoStore): void
+
+  /** Recuperación: carga el respaldo que el usuario eligió y reanuda el guardado. */
+  restaurarRespaldo(nombre: string): Promise<{ ok: boolean; error?: string }>
+  /** Recuperación: empezar con un portafolio vacío, conservando la copia del original. */
+  empezarDeCero(): void
+  /** Guarda una copia del documento en la carpeta que elija el usuario (salida de emergencia). */
+  guardarCopiaDeEmergencia(): Promise<{ ok: boolean; ruta?: string }>
 
   guardarActivo(activo: Activo): void
   eliminarActivo(id: string): void
@@ -100,13 +174,93 @@ export const useApp = create<EstadoApp>((set, get) => ({
     // Idempotente: StrictMode monta los efectos dos veces en desarrollo.
     if (get().cargado || cargaEnCurso) return
     cargaEnCurso = true
-    const crudo = await window.api?.almacen.cargar()
-    const doc = migrarDocumento(crudo ?? null)
+    atenderFlushAlCerrar()
+
+    const resultado = await window.api?.almacen.cargar()
+
+    // Sin preload (vite dev en navegador) se arranca vacío, como siempre.
+    if (!resultado || resultado.estado === 'vacio') {
+      set({ doc: documentoInicial(), cargado: true, plan: 'free' })
+      return
+    }
+
+    if (resultado.estado === 'ilegible') {
+      // Hay un archivo y no se pudo leer. **No** es primer uso.
+      guardadoBloqueado = true
+      set({
+        doc: documentoInicial(),
+        cargado: true,
+        plan: 'free',
+        recuperacion: {
+          motivo: 'ilegible',
+          detalle: resultado.error,
+          bytes: resultado.bytes,
+          copia: resultado.copia,
+          respaldos: resultado.respaldos,
+        },
+      })
+      return
+    }
+
+    // Parsea, pero puede tener campos con forma inválida (hallazgo #7: eso
+    // dejaba la ventana en blanco sin un solo mensaje).
+    const problemas = revisarForma(resultado.documento)
+    if (problemas.length > 0) {
+      guardadoBloqueado = true
+      const extra = await window.api?.almacen.prepararRecuperacion()
+      set({
+        doc: documentoInicial(),
+        cargado: true,
+        plan: 'free',
+        recuperacion: {
+          motivo: 'forma',
+          detalle: problemas.join(', '),
+          bytes: extra?.bytes ?? 0,
+          copia: extra?.copia ?? null,
+          respaldos: extra?.respaldos ?? [],
+        },
+      })
+      return
+    }
+
+    const doc = migrarDocumento(resultado.documento)
     let licenciaEstado: EstadoLicencia | undefined
     if (doc.licencia) {
       licenciaEstado = await validarLicencia(doc.licencia, llavePublicaPem, hoyIso())
     }
     set({ doc, cargado: true, licenciaEstado, plan: planEfectivo(licenciaEstado) })
+  },
+
+  async restaurarRespaldo(nombre) {
+    const r = await window.api?.almacen.leerRespaldo(nombre)
+    if (!r || !r.ok) return { ok: false, error: r?.error ?? 'No se pudo leer el respaldo' }
+    if (revisarForma(r.documento).length > 0) return { ok: false, error: 'forma' }
+    const doc = migrarDocumento(r.documento)
+    guardadoBloqueado = false
+    set({ doc, recuperacion: undefined })
+    persistir(doc)
+    if (doc.licencia) {
+      const estado = await validarLicencia(doc.licencia, llavePublicaPem, hoyIso())
+      set({ licenciaEstado: estado, plan: planEfectivo(estado) })
+    }
+    return { ok: true }
+  },
+
+  empezarDeCero() {
+    const doc = documentoInicial()
+    guardadoBloqueado = false
+    set({ doc, recuperacion: undefined, licenciaEstado: undefined, plan: 'free' })
+    persistir(doc)
+  },
+
+  async guardarCopiaDeEmergencia() {
+    const doc = get().doc
+    const r = await window.api?.dialogo.guardar({
+      sugerido: `patrimo-copia-${hoyIso()}.json`,
+      filtros: [{ nombre: 'JSON', extensiones: ['json'] }],
+      contenidoBase64: textoABase64(JSON.stringify(doc, null, 2)),
+    })
+    return { ok: r?.guardado ?? false, ruta: r?.ruta }
   },
 
   mutarDoc(cambia) {

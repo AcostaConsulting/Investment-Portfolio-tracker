@@ -29,10 +29,37 @@ export interface EstadoActualizador {
   error?: string
 }
 
+/** Lo que se sabe de un respaldo sin cargarlo (pantalla de recuperación). */
+export interface ResumenRespaldo {
+  nombre: string
+  fechaIso: string
+  bytes: number
+  activos: number | null
+  operaciones: number | null
+  legible: boolean
+}
+
+/**
+ * `vacio` (no hay archivo) e `ilegible` (hay archivo y no se puede leer) son
+ * cosas distintas. Confundirlas era el bug #3 de AUDITORIA-ROBUSTEZ.md.
+ */
+export type ResultadoCarga =
+  | { estado: 'vacio' }
+  | { estado: 'ok'; documento: unknown }
+  | { estado: 'ilegible'; error: string; bytes: number; copia: string | null; respaldos: ResumenRespaldo[] }
+
+export type ResultadoGuardado =
+  | { ok: true }
+  | { ok: false; codigo: string; error: string; ruta: string }
+
 export interface ApiPreload {
   almacen: {
-    cargar(): Promise<unknown | null>
-    guardar(documento: unknown): Promise<void>
+    cargar(): Promise<ResultadoCarga>
+    guardar(documento: unknown): Promise<ResultadoGuardado>
+    leerRespaldo(nombre: string): Promise<{ ok: true; documento: unknown } | { ok: false; error: string }>
+    prepararRecuperacion(): Promise<{ copia: string | null; bytes: number; respaldos: ResumenRespaldo[] }>
+    alPedirFlush(cb: () => void): void
+    flushListo(): void
   }
   red: {
     json(url: string): Promise<RespuestaRed>

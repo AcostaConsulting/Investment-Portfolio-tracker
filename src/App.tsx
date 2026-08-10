@@ -20,6 +20,8 @@ import { Configuracion } from './features/configuracion/Configuracion'
 import { Onboarding } from './features/onboarding/Onboarding'
 import { Tour } from './features/onboarding/Tour'
 import { DetalleActivo } from './features/detalle/DetalleActivo'
+import { Recuperacion } from './features/recuperacion/Recuperacion'
+import { BarraGuardado } from './ui/BarraGuardado'
 
 export type Vista =
   | 'resumen'
@@ -58,6 +60,7 @@ export default function App() {
   const onboardingCompletado = useApp((s) => s.doc.onboardingCompletado)
   const tourCompletado = useApp((s) => s.doc.tourCompletado)
   const plan = useApp((s) => s.plan)
+  const recuperacion = useApp((s) => s.recuperacion)
   const abrirModalPlanes = useUi((s) => s.abrirModalPlanes)
   const activoDetalle = useUi((s) => s.activoDetalle)
   const cerrarDetalle = useUi((s) => s.cerrarDetalle)
@@ -74,6 +77,12 @@ export default function App() {
   }, [ajustes.idioma])
 
   if (!cargado) return null
+
+  // Va ANTES del onboarding a propósito: si el documento no se pudo leer, el
+  // `doc` en memoria es el inicial y `onboardingCompletado` es false, así que
+  // sin esta línea la app le diría "bienvenido" a alguien que sí tenía datos —
+  // que es exactamente el bug #3 de la auditoría.
+  if (recuperacion) return <Recuperacion />
 
   if (!onboardingCompletado) return <Onboarding />
 
@@ -118,6 +127,7 @@ export default function App() {
         </div>
       </aside>
       <main className="contenido">
+        <BarraGuardado />
         {activoDetalle ? (
           <DetalleActivo />
         ) : (

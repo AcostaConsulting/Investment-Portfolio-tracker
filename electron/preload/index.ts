@@ -6,8 +6,20 @@ import { contextBridge, ipcRenderer } from 'electron'
  */
 const api = {
   almacen: {
-    cargar: (): Promise<unknown | null> => ipcRenderer.invoke('almacen:cargar'),
-    guardar: (documento: unknown): Promise<void> => ipcRenderer.invoke('almacen:guardar', documento),
+    cargar: (): Promise<unknown> => ipcRenderer.invoke('almacen:cargar'),
+    guardar: (documento: unknown): Promise<unknown> => ipcRenderer.invoke('almacen:guardar', documento),
+    /** Lee un respaldo que el usuario eligió en la pantalla de recuperación. */
+    leerRespaldo: (nombre: string): Promise<unknown> => ipcRenderer.invoke('almacen:leerRespaldo', nombre),
+    /** Copia el documento y lista respaldos cuando la forma es inutilizable. */
+    prepararRecuperacion: (): Promise<unknown> => ipcRenderer.invoke('almacen:prepararRecuperacion'),
+    /**
+     * Main avisa que se está cerrando la ventana y que hay que vaciar el
+     * guardado pendiente. El renderer contesta con `flushListo`.
+     */
+    alPedirFlush: (cb: () => void): void => {
+      ipcRenderer.on('almacen:pedir-flush', () => cb())
+    },
+    flushListo: (): void => ipcRenderer.send('almacen:flush-listo'),
   },
   red: {
     json: (url: string): Promise<unknown> => ipcRenderer.invoke('red:json', url),
