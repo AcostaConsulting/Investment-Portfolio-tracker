@@ -105,9 +105,24 @@ New-Item -ItemType Directory -Force -Path $destAssets | Out-Null
 $assetsOrigen = @(Get-ChildItem $cache -Recurse -Directory -Filter 'appxAssets' -ErrorAction SilentlyContinue | Select-Object -First 1)
 if ($assetsOrigen.Count -gt 0) {
   Copy-Item (Join-Path $assetsOrigen[0].FullName '*') -Destination $destAssets -Force
-  info "assets copiados: $((Get-ChildItem $destAssets -File).Count)"
+  info "assets de respaldo copiados: $((Get-ChildItem $destAssets -File).Count)"
 } else {
-  Write-Warning "No se encontró appxAssets. Si el build se queja de los assets por defecto, corre `npm run dist` una vez."
+  # Esto NO es fatal desde que el repo trae sus propios assets en `build/appx/`
+  # (StoreLogo, Square150x150Logo, Square44x44Logo, Wide310x150Logo): cuando el
+  # usuario los aporta todos, electron-builder no toca los de muestra.
+  #
+  # Antes aqui habia solo un Write-Warning y el build seguia hasta reventar mas
+  # tarde en makeappx con "0x80070002 - The system cannot find the file
+  # specified". Paso de verdad en el primer run de Actions: el runner nunca baja
+  # el bundle legacy, asi que no habia assets de muestra que copiar.
+  info "sin assets de muestra en cache (normal en CI): se usan los de build/appx/"
+  $propios = Join-Path (Split-Path $PSScriptRoot -Parent) 'build\appx'
+  $req = @('StoreLogo.png', 'Square150x150Logo.png', 'Square44x44Logo.png', 'Wide310x150Logo.png')
+  $faltan = @($req | Where-Object { -not (Test-Path (Join-Path $propios $_)) })
+  if ($faltan.Count -gt 0) {
+    throw "Faltan assets del paquete y no hay de muestra en cache. Ausentes en build/appx/: $($faltan -join ', ')"
+  }
+  info "build/appx/ tiene los $($req.Count) assets requeridos"
 }
 
 # --- 4. 🔑 LA COMPROBACIÓN QUE NO HAY QUE SALTARSE -------------------------
