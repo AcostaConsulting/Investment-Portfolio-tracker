@@ -1,0 +1,76 @@
+# ============================================================================
+# 🔴🔴🔴  IDENTIDAD DE PRUEBA — TEST-ONLY — NO USAR EN PRODUCCIÓN  🔴🔴🔴
+# ============================================================================
+#
+# Este archivo NO sirve para publicar en Microsoft Store.
+#
+# `identityName`, `publisher` y `publisherDisplayName` son valores INVENTADOS
+# para poder construir un paquete MSIX/AppX y medir la prueba H2 (¿una
+# instalación de Store ve el `datos.json` que dejó el instalador NSIS?).
+#
+# NADA se ha reservado todavía en Microsoft Partner Center. Cuando se reserve,
+# los tres valores hay que COPIARLOS EXACTOS de Partner Center
+# (Package/Identity/Name, Publisher, Publisher Display Name) — ver §11 y §10 de
+# PATRIMO-MICROSOFT-STORE-SMARTSCREEN.md. No se adivinan.
+#
+# El `OID.2.25.311729368913984317654407730594956997722=1` dentro de `publisher`
+# NO es decorativo: Microsoft lo exige para que un paquete SIN FIRMAR pueda
+# registrarse con `Add-AppxPackage -AllowUnsigned`. Al firmar de verdad hay que
+# QUITARLO y poner el Subject exacto del certificado.
+# https://learn.microsoft.com/en-us/windows/msix/package/unsigned-package
+#
+# Construir con:
+#   npx electron-builder --win appx --config electron-builder.store.yml --publish never
+# ============================================================================
+
+appId: mx.acostaconsulting.tracker-portafolio
+copyright: © Acosta Consulting
+
+# 🔴 NO QUITAR. Sin esto el build del appx no arranca en esta máquina.
+# Por defecto electron-builder baja el bundle legacy `winCodeSign-2.6.0`, cuyo
+# `makeappx.exe` es de 2019 y NO PUEDE INICIARSE en este Windows 11: falla con
+# "la configuración en paralelo no es correcta" (SxS: le falta el runtime de
+# VC++). Node lo reporta como `spawn UNKNOWN`, que no dice nada.
+# Fijar el toolset moderno baja `windows-kits-bundle-10_0_26100_0.zip`, cuyo
+# makeappx sí corre. Medido, no supuesto — ver §26 del handoff.
+toolsets:
+  winCodeSign: "1.1.0"
+
+# 🔴 productName NO cambia. Es de donde Electron saca app.getName() y de ahí
+# userData → %APPDATA%\Tracker de Portafolio\. Cambiarlo aquí invalidaría la
+# prueba H2 entera (mediríamos dos carpetas distintas por construcción, no la
+# virtualización de MSIX). Ver handoff §7 y §5 del documento de la Store.
+productName: Tracker de Portafolio
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - out/**
+
+win:
+  target:
+    - target: appx
+      arch: [x64]
+  icon: build/icon.ico
+
+appx:
+  # Lo único que cambia de cara al usuario respecto al NSIS.
+  displayName: "Patrimo (TEST)"
+
+  applicationId: "PatrimoTest"
+  identityName: "PatrimoTest-NO-USAR-EN-PRODUCCION"
+  publisher: "CN=PatrimoLocalTest, OID.2.25.311729368913984317654407730594956997722=1"
+  publisherDisplayName: "Patrimo Local Test"
+
+  languages:
+    - es-MX
+    - en-US
+    - fr-FR
+    - zh-CN
+    - ja-JP
+
+  artifactName: PatrimoTEST-Store-${version}.appx
+
+# Sin bloque `publish:` a propósito: este paquete no se sube a ningún lado.

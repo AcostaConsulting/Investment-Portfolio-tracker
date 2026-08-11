@@ -1,0 +1,220 @@
+# =============================================================================
+# H2 — ¿una instalación MSIX ve el `datos.json` que dejó el NSIS?
+#
+# BANCO DE PRUEBAS, NO UN CANAL DE DISTRIBUCIÓN.
+#
+# Existe porque la máquina de desarrollo no puede correr esta prueba: exige un
+# entorno desechable, y ahí la virtualización está apagada en el firmware
+# (handoff §26.1). Un runner de GitHub Actions da lo que hacía falta: es
+# efímero, corre como administrador —lo que pedía `Add-AppxPackage
+# -AllowUnsigned`— y no arriesga el equipo de nadie.
+#
+# 🔴 GUARDARRAÍLES, y están en el código, no sólo en la intención:
+#   · `workflow_dispatch` únicamente. NUNCA en push.
+#   · `permissions: contents: read` — este workflow **no puede** crear releases
+#     ni tags aunque alguien lo edite mal. Es el guardarraíl que de verdad
+#     protege, en vez de confiar en que nadie añada un paso.
+#   · No usa ni un secreto del repositorio.
+#   · La identidad del paquete es TEST-ONLY (§26.3). No hay nada reservado en
+#     Partner Center y esto no reserva nada.
+#   · El portafolio real no participa: se siembra un documento sintético con
+#     activos PRUEBA-H2-*.
+# =============================================================================
+name: H2 · MSIX vs NSIS (prueba, no publica)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------------------
+  construir:
+    name: Construir los dos paquetes
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # 🔑 La pregunta que §26.4 dejó abierta: el SxS ¿es de la máquina de Paco
+      # o de electron-builder? El runner trae el SDK de Windows de verdad, así
+      # que aquí se acota la causa. Se mide ANTES de construir para que el dato
+      # exista aunque el build falle.
+      - name: 'Sonda §26.4: ¿arranca makeappx del SDK del runner?'
+        shell: pwsh
+        run: |
+          $sdk = "${env:ProgramFiles(x86)}\Windows Kits\10\bin"
+          if (-not (Test-Path $sdk)) { Write-Host "::warning::No hay Windows Kits en el runner"; exit 0 }
+          Get-ChildItem $sdk -Directory | Sort-Object Name -Descending | Select-Object -First 3 | ForEach-Object {
+            $mk = Join-Path $_.FullName 'x64\makeappx.exe'
+            if (Test-Path $mk) {
+              $salida = (& $mk 2>&1 | Out-String)
+              $global:LASTEXITCODE = 0
+              if ($salida -match 'MakeAppx') { Write-Host "ARRANCA EN SU SITIO: $mk" }
+              else { Write-Host "NO ARRANCA (mismo SxS que en local): $mk" }
+            }
+          }
+
+      - name: Construir NSIS
+        run: npm run dist
+
+      - name: Construir MSIX (identidad TEST-ONLY)
+        run: npm run dist:store
+
+      - name: Comprobar que los dos artefactos EXISTEN de verdad
+        shell: pwsh
+        run: |
+          # §26.4: un exit code 0 ya mintió una vez en este proyecto. Aquí el
+          # criterio es el archivo en disco, no el código de salida del build.
+          $exe  = Get-ChildItem release\TrackerPortafolio-Setup-*.exe -EA SilentlyContinue
+          $appx = Get-ChildItem release\PatrimoTEST-Store-*.appx     -EA SilentlyContinue
+          if (-not $exe)  { throw "NO se produjo el instalador NSIS" }
+          if (-not $appx) { throw "NO se produjo el paquete AppX" }
+          Write-Host "NSIS: $($exe.Name) $($exe.Length) B"
+          Write-Host "APPX: $($appx.Name) $($appx.Length) B"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paquetes
+          retention-days: 5
+          path: |
+            release/TrackerPortafolio-Setup-*.exe
+            release/PatrimoTEST-Store-*.appx
+
+  # ---------------------------------------------------------------------------
+  # Dos runners INDEPENDIENTES, uno por sentido de instalación. Es la única
+  # forma honesta de "invertir el orden y repetir": en una sola máquina, el
+  # segundo sentido heredaría el estado del primero.
+  medir:
+    name: "H2 · ${{ matrix.orden }}"
+    needs: construir
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        orden: [nsis-primero, msix-primero]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: paquetes
+          path: paquetes
+
+      - name: Entorno del runner (y H4 · ¿hay WACK?)
+        shell: pwsh
+        run: |
+          # Modo de desarrollador: hace falta para registrar un paquete sin firma.
+          $k = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock'
+          New-Item -Path $k -Force | Out-Null
+          Set-ItemProperty -Path $k -Name AllowDevelopmentWithoutDevLicense -Value 1 -Type DWord
+          Write-Host "Modo desarrollador: $((Get-ItemProperty $k).AllowDevelopmentWithoutDevLicense)"
+          Write-Host "Admin: $(([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole('Administrator'))"
+          $wack = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\App Certification Kit\appcert.exe" -EA SilentlyContinue
+          if ($wack) { Write-Host "WACK disponible: $($wack.FullName)" }
+          else { Write-Host "::warning::WACK NO disponible en el runner - H4 queda como hueco declarado" }
+
+      - name: Medir línea base
+        shell: powershell
+        run: .\scripts\h2-medir.ps1 -Etiqueta "0-base-${{ matrix.orden }}" -Salida "$env:GITHUB_WORKSPACE\resultados"
+
+      # --- PRIMER CANAL --------------------------------------------------------
+      - name: 'Instalar primer canal: NSIS'
+        if: matrix.orden == 'nsis-primero'
+        shell: powershell
+        run: |
+          $exe = (Get-ChildItem paquetes\TrackerPortafolio-Setup-*.exe)[0].FullName
+          Start-Process -FilePath $exe -ArgumentList '/S' -Wait
+          Write-Host "instalado: $exe"
+
+      - name: 'Instalar primer canal: MSIX'
+        if: matrix.orden == 'msix-primero'
+        shell: powershell
+        run: |
+          $appx = (Get-ChildItem paquetes\PatrimoTEST-Store-*.appx)[0].FullName
+          Add-AppxPackage -Path $appx -AllowUnsigned -Verbose
+          Get-AppxPackage -Name '*PatrimoTest*' | Format-List Name, PackageFamilyName, InstallLocation
+
+      - name: Sembrar portafolio sintético en el perfil del primer canal
+        shell: powershell
+        run: |
+          # Se siembra en %APPDATA%: es la ruta que la app pide en LOS DOS
+          # canales. Si el MSIX acaba leyendo otra, es Windows redirigiendo.
+          .\scripts\h2-sembrar.ps1 -Destino "$env:APPDATA\Tracker de Portafolio" -Marca A
+          if ('${{ matrix.orden }}' -eq 'msix-primero') {
+            # Con el MSIX ya instalado, sembrar también dentro de su contenedor,
+            # porque puede que sea ahí donde lee.
+            $pfn = (Get-AppxPackage -Name '*PatrimoTest*').PackageFamilyName
+            if ($pfn) { .\scripts\h2-sembrar.ps1 -Destino "$env:LOCALAPPDATA\Packages\$pfn\LocalCache\Roaming\Tracker de Portafolio" -Marca A }
+          }
+
+      - name: Lanzar la app del primer canal y cerrarla
+        shell: powershell
+        run: .\scripts\h2-lanzar.ps1 -Canal '${{ matrix.orden }}' -Cual primero
+
+      - name: Medir tras el primer canal
+        shell: powershell
+        run: .\scripts\h2-medir.ps1 -Etiqueta "1-primer-canal-${{ matrix.orden }}" -Salida "$env:GITHUB_WORKSPACE\resultados"
+
+      # --- SEGUNDO CANAL, ENCIMA (sin desinstalar el primero) ------------------
+      - name: 'Instalar segundo canal: MSIX'
+        if: matrix.orden == 'nsis-primero'
+        shell: powershell
+        run: |
+          $appx = (Get-ChildItem paquetes\PatrimoTEST-Store-*.appx)[0].FullName
+          Add-AppxPackage -Path $appx -AllowUnsigned -Verbose
+          Get-AppxPackage -Name '*PatrimoTest*' | Format-List Name, PackageFamilyName, InstallLocation
+
+      - name: 'Instalar segundo canal: NSIS'
+        if: matrix.orden == 'msix-primero'
+        shell: powershell
+        run: |
+          $exe = (Get-ChildItem paquetes\TrackerPortafolio-Setup-*.exe)[0].FullName
+          Start-Process -FilePath $exe -ArgumentList '/S' -Wait
+          Write-Host "instalado: $exe"
+
+      - name: 🔑 Lanzar la app del SEGUNDO canal — aquí se decide H2
+        shell: powershell
+        run: .\scripts\h2-lanzar.ps1 -Canal '${{ matrix.orden }}' -Cual segundo
+
+      - name: 🔑 Medir tras el segundo canal — EL VEREDICTO
+        shell: powershell
+        run: .\scripts\h2-medir.ps1 -Etiqueta "2-VEREDICTO-${{ matrix.orden }}" -Salida "$env:GITHUB_WORKSPACE\resultados"
+
+      # --- DESINSTALAR Y VER QUÉ SOBREVIVE -------------------------------------
+      - name: Desinstalar el MSIX y volver a medir
+        shell: powershell
+        run: |
+          Get-AppxPackage -Name '*PatrimoTest*' | Remove-AppxPackage -EA Continue
+          Start-Sleep -Seconds 5
+          .\scripts\h2-medir.ps1 -Etiqueta "3-tras-desinstalar-msix-${{ matrix.orden }}" -Salida "$env:GITHUB_WORKSPACE\resultados"
+
+      - name: 'H4 · WACK sobre el paquete (si está)'
+        continue-on-error: true
+        shell: powershell
+        run: |
+          $wack = "${env:ProgramFiles(x86)}\Windows Kits\10\App Certification Kit\appcert.exe"
+          if (-not (Test-Path $wack)) { Write-Host "WACK ausente: H4 no se puede correr aqui"; exit 0 }
+          $appx = (Get-ChildItem paquetes\PatrimoTEST-Store-*.appx)[0].FullName
+          $rep = "$env:GITHUB_WORKSPACE\resultados\wack-${{ matrix.orden }}.xml"
+          & $wack reset
+          & $wack test -appxpackagepath $appx -reportoutputpath $rep
+          Write-Host "WACK exit: $LASTEXITCODE"
+
+      - name: Resumen legible en el log
+        if: always()
+        shell: powershell
+        run: Get-ChildItem "$env:GITHUB_WORKSPACE\resultados\*.txt" | ForEach-Object { Write-Host "`n########## $($_.Name) ##########"; Get-Content $_.FullName | Write-Host }
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: resultados-h2-${{ matrix.orden }}
+          retention-days: 30
+          path: resultados/

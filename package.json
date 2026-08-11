@@ -15,6 +15,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json && tsc --noEmit -p electron/tsconfig.json",
     "build": "npm run typecheck && npm run test && vite build && node scripts/build-electron.mjs",
     "dist": "npm run build && electron-builder --win --publish never",
+    "dist:store": "npm run build && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dist-store.ps1",
     "release": "npm run build && electron-builder --win --publish always",
     "licencia:llaves": "node scripts/generar-llaves.mjs",
     "licencia:nueva": "node scripts/generar-licencia.mjs",
