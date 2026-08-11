@@ -21,7 +21,11 @@ $ErrorActionPreference = 'Stop'
 New-Item -ItemType Directory -Force -Path $Destino | Out-Null
 
 function Act($n, $clase, $moneda) {
-  @{ id = "h2-activo-$Marca-$n"; simbolo = "PRUEBA-H2-ACTIVO-$n"; nombre = "Activo sintetico $n (lote $Marca)"
+  # [CLAVE] El LOTE va dentro del simbolo: PRUEBA-H2-A-ACTIVO-1 vs PRUEBA-H2-B-ACTIVO-1.
+  # Antes el simbolo era el mismo en los dos lotes y solo cambiaba el `nombre`,
+  # asi que si el lote A aparecia del lado B era INDISTINGUIBLE de un lote B
+  # recien sembrado -- justo la pregunta que la prueba viene a contestar.
+  @{ id = "h2-activo-$Marca-$n"; simbolo = "PRUEBA-H2-$Marca-ACTIVO-$n"; nombre = "Activo sintetico $n (lote $Marca)"
      clase = $clase; moneda = $moneda }
 }
 function Op($n, $seq, $fecha, $cant, $precio, $moneda, $tc) {
@@ -59,5 +63,5 @@ $h = (Get-FileHash -LiteralPath $ruta -Algorithm SHA256).Hash
 Write-Host "Sembrado (lote $Marca): $ruta"
 Write-Host "  bytes  : $((Get-Item -LiteralPath $ruta).Length)"
 Write-Host "  sha256 : $h"
-Write-Host "  activos: PRUEBA-H2-ACTIVO-1/2/3"
+Write-Host "  activos: PRUEBA-H2-$Marca-ACTIVO-1/2/3"
 exit 0

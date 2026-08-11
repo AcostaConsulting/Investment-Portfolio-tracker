@@ -91,6 +91,17 @@ jobs:
   # Dos runners INDEPENDIENTES, uno por sentido de instalación. Es la única
   # forma honesta de "invertir el orden y repetir": en una sola máquina, el
   # segundo sentido heredaría el estado del primero.
+  #
+  # 🔴 ESTE JOB FALLA A PROPÓSITO EN UN RUNNER, Y ESO ES LO CORRECTO.
+  # Un runner de Actions no tiene sesión de escritorio interactiva, así que el
+  # `.exe` del NSIS no llega a levantar (medido en el run 31460586028: 0
+  # procesos). Sin app corriendo no hay nada que observar, así que
+  # `h2-lanzar.ps1` corta ahí en vez de seguir y producir un informe con pinta
+  # de concluyente. **H2 se contesta en Windows Sandbox**, no aquí:
+  # `auditoria-evidencia/fase-c/h2-sandbox.wsb`.
+  #
+  # Lo que este job SÍ aporta en verde es el job `construir` de arriba (que el
+  # paquete se construye) y el paso de WACK.
   medir:
     name: "H2 · ${{ matrix.orden }}"
     needs: construir
@@ -141,17 +152,30 @@ jobs:
           Add-AppxPackage -Path $appx -AllowUnsigned -Verbose
           Get-AppxPackage -Name '*PatrimoTest*' | Format-List Name, PackageFamilyName, InstallLocation
 
-      - name: Sembrar portafolio sintético en el perfil del primer canal
+      - name: Sembrar el lote A SOLO en el perfil del primer canal
         shell: powershell
         run: |
-          # Se siembra en %APPDATA%: es la ruta que la app pide en LOS DOS
-          # canales. Si el MSIX acaba leyendo otra, es Windows redirigiendo.
-          .\scripts\h2-sembrar.ps1 -Destino "$env:APPDATA\Tracker de Portafolio" -Marca A
-          if ('${{ matrix.orden }}' -eq 'msix-primero') {
-            # Con el MSIX ya instalado, sembrar también dentro de su contenedor,
-            # porque puede que sea ahí donde lee.
+          # 🔑 EN UN SOLO SITIO. La version anterior sembraba en las DOS rutas
+          # cuando el orden era msix-primero, y entonces el informe decia "mismo
+          # contenido en las dos rutas" -- garantizado por construccion, no un
+          # hallazgo. El perfil del SEGUNDO canal tiene que quedar vacio: es lo
+          # unico que convierte "aparece la marca del otro lado" en evidencia.
+          $PROD = 'Tracker de Portafolio'
+          if ('${{ matrix.orden }}' -eq 'nsis-primero') {
+            .\scripts\h2-sembrar.ps1 -Destino "$env:APPDATA\$PROD" -Marca A
+          } else {
             $pfn = (Get-AppxPackage -Name '*PatrimoTest*').PackageFamilyName
-            if ($pfn) { .\scripts\h2-sembrar.ps1 -Destino "$env:LOCALAPPDATA\Packages\$pfn\LocalCache\Roaming\Tracker de Portafolio" -Marca A }
+            if (-not $pfn) { throw "El paquete MSIX no esta instalado: no hay contenedor donde sembrar" }
+            .\scripts\h2-sembrar.ps1 -Destino "$env:LOCALAPPDATA\Packages\$pfn\LocalCache\Roaming\$PROD" -Marca A
+          }
+          Write-Host "--- comprobacion: el perfil del SEGUNDO canal debe estar limpio ---"
+          if ('${{ matrix.orden }}' -eq 'nsis-primero') {
+            $pfn = (Get-AppxPackage -Name '*PatrimoTest*').PackageFamilyName
+            Write-Host "  (el MSIX aun no esta instalado: nada que comprobar)"
+          } else {
+            $otro = "$env:APPDATA\$PROD\datos.json"
+            if (Test-Path $otro) { throw "El perfil del segundo canal NO esta limpio: $otro" }
+            Write-Host "  %APPDATA% limpio"
           }
 
       - name: Lanzar la app del primer canal y cerrarla
@@ -183,9 +207,17 @@ jobs:
         shell: powershell
         run: .\scripts\h2-lanzar.ps1 -Canal '${{ matrix.orden }}' -Cual segundo
 
-      - name: 🔑 Medir tras el segundo canal — EL VEREDICTO
+      - name: 🔑 Medir tras el segundo canal
         shell: powershell
         run: .\scripts\h2-medir.ps1 -Etiqueta "2-VEREDICTO-${{ matrix.orden }}" -Salida "$env:GITHUB_WORKSPACE\resultados"
+
+      - name: 🔑 VEREDICTO H2
+        shell: powershell
+        run: |
+          # Sale con 2 si el resultado es INCONCLUSO: un veredicto que no
+          # concluye no puede pasar por bueno en verde.
+          .\scripts\h2-veredicto.ps1 -Orden '${{ matrix.orden }}' -Salida "$env:GITHUB_WORKSPACE\resultados" -LoteSembrado A
+          exit $LASTEXITCODE
 
       # --- DESINSTALAR Y VER QUÉ SOBREVIVE -------------------------------------
       - name: Desinstalar el MSIX y volver a medir
@@ -195,7 +227,11 @@ jobs:
           Start-Sleep -Seconds 5
           .\scripts\h2-medir.ps1 -Etiqueta "3-tras-desinstalar-msix-${{ matrix.orden }}" -Salida "$env:GITHUB_WORKSPACE\resultados"
 
+      # `always()` a propósito: H4 es lo único de este job que un runner SÍ puede
+      # contestar, y sería absurdo perderlo porque H2 se corte antes (que es lo
+      # que va a pasar, por diseño — ver la nota del job).
       - name: 'H4 · WACK sobre el paquete (si está)'
+        if: always()
         continue-on-error: true
         shell: powershell
         run: |
@@ -210,7 +246,15 @@ jobs:
       - name: Resumen legible en el log
         if: always()
         shell: powershell
-        run: Get-ChildItem "$env:GITHUB_WORKSPACE\resultados\*.txt" | ForEach-Object { Write-Host "`n########## $($_.Name) ##########"; Get-Content $_.FullName | Write-Host }
+        run: |
+          $f = @(Get-ChildItem "$env:GITHUB_WORKSPACE\resultados\*.txt" -ErrorAction SilentlyContinue)
+          if ($f.Count -eq 0) { Write-Host "(sin resultados que mostrar)"; exit 0 }
+          foreach ($x in $f) {
+            Write-Host ""
+            Write-Host "########## $($x.Name) ##########"
+            (Get-Content $x.FullName -Raw -ErrorAction SilentlyContinue) | Write-Host
+          }
+          exit 0   # este paso solo informa; que falle no debe tenir el resultado
 
       - uses: actions/upload-artifact@v4
         if: always()

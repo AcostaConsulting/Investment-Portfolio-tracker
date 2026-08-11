@@ -2,7 +2,7 @@
 #
 # Asume que `npm run build` ya dejo `out/` al dia (el script de npm lo encadena).
 #
-# 🔴 OJO: hoy `electron-builder.store.yml` lleva una identidad TEST-ONLY. Este
+# [CRITICO] OJO: hoy `electron-builder.store.yml` lleva una identidad TEST-ONLY. Este
 # comando NO produce un paquete publicable en Microsoft Store hasta que los
 # valores de identidad se copien de Partner Center. Ver handoff seccion 26.3.
 $ErrorActionPreference = 'Stop'
