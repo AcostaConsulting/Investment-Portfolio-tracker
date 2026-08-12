@@ -51,11 +51,17 @@ export type ResultadoCarga =
 export type ResultadoGuardado =
   | { ok: true }
   | { ok: false; codigo: string; error: string; ruta: string }
+  /**
+   * Alguien más escribió el archivo desde que lo cargamos (§22.3). No se
+   * sobrescribió nada: las dos versiones ya están respaldadas y la decisión
+   * es del usuario.
+   */
+  | { ok: false; motivo: 'conflicto'; copiaExterna: string; copiaMia: string; ruta: string }
 
 export interface ApiPreload {
   almacen: {
     cargar(): Promise<ResultadoCarga>
-    guardar(documento: unknown): Promise<ResultadoGuardado>
+    guardar(documento: unknown, forzar?: boolean): Promise<ResultadoGuardado>
     leerRespaldo(nombre: string): Promise<{ ok: true; documento: unknown } | { ok: false; error: string }>
     prepararRecuperacion(): Promise<{ copia: string | null; bytes: number; respaldos: ResumenRespaldo[] }>
     alPedirFlush(cb: () => void): void

@@ -47,12 +47,24 @@ let docPendiente: DocumentoStore | undefined
  */
 let guardadoBloqueado = false
 
-async function escribirAhora(doc: DocumentoStore): Promise<void> {
-  const r = await window.api?.almacen.guardar(doc)
+async function escribirAhora(doc: DocumentoStore, forzar = false): Promise<void> {
+  const r = await window.api?.almacen.guardar(doc, forzar)
+  // §22.3: otro escribió por debajo. Se para el guardado hasta que el usuario
+  // decida — seguir escribiendo con debounce destruiría su trabajo en el
+  // siguiente tecleo, que es exactamente lo que pasó el 9 de agosto.
+  if (r && r.ok === false && 'motivo' in r && r.motivo === 'conflicto') {
+    guardadoBloqueado = true
+    useApp.setState({
+      conflictoGuardado: { copiaExterna: r.copiaExterna, copiaMia: r.copiaMia, ruta: r.ruta },
+    })
+    return
+  }
   // Antes esto era `void ...guardar(doc)`: el rechazo se descartaba y guardar
   // contra un archivo bloqueado o de solo lectura fallaba en absoluto silencio
   // (AUDITORIA-ROBUSTEZ.md §1.2). Ahora el fallo llega al estado y a la UI.
-  if (r && r.ok === false) {
+  // `'codigo' in r` discrimina la variante de error de la de conflicto: el `in`
+  // del bloque de arriba no estrecha la unión al salir por `return`.
+  if (r && r.ok === false && 'codigo' in r) {
     useApp.setState({ errorGuardado: { codigo: r.codigo, error: r.error, ruta: r.ruta } })
   } else if (r && r.ok) {
     if (useApp.getState().errorGuardado) useApp.setState({ errorGuardado: undefined })
@@ -107,6 +119,16 @@ export interface ErrorGuardado {
   ruta: string
 }
 
+/**
+ * Alguien mas escribio `datos.json` desde que lo cargamos (§22.3). No se pisa
+ * su trabajo: las dos versiones ya estan respaldadas y el usuario decide.
+ */
+export interface ConflictoGuardado {
+  copiaExterna: string
+  copiaMia: string
+  ruta: string
+}
+
 export interface EstadoApp {
   cargado: boolean
   doc: DocumentoStore
@@ -116,9 +138,16 @@ export interface EstadoApp {
   recuperacion?: EstadoRecuperacion
   /** Presente = el último guardado falló y el usuario tiene que enterarse. */
   errorGuardado?: ErrorGuardado
+  /** Presente = otro escribió el archivo por debajo y hay que resolverlo (§22.3). */
+  conflictoGuardado?: ConflictoGuardado
 
   inicializar(): Promise<void>
   mutarDoc(cambia: (doc: DocumentoStore) => DocumentoStore): void
+
+  /** §22.3: guardar mi versión encima de la del otro (que ya está respaldada). */
+  guardarDeTodosModos(): Promise<void>
+  /** §22.3: descartar mis cambios y recargar lo que hay en disco. */
+  descartarYRecargar(): Promise<void>
 
   /** Recuperación: carga el respaldo que el usuario eligió y reanuda el guardado. */
   restaurarRespaldo(nombre: string): Promise<{ ok: boolean; error?: string }>
@@ -254,6 +283,34 @@ export const useApp = create<EstadoApp>((set, get) => ({
     guardadoBloqueado = false
     set({ doc, recuperacion: undefined, licenciaEstado: undefined, plan: 'free' })
     persistir(doc)
+  },
+
+  /**
+   * §22.3 — el usuario decide quedarse con SU versión.
+   *
+   * No se pierde nada del otro: `guardar()` ya dejó su copia en
+   * `respaldos/conflicto-…-EXTERNO.json` antes de preguntar.
+   */
+  async guardarDeTodosModos() {
+    const doc = get().doc
+    guardadoBloqueado = false
+    set({ conflictoGuardado: undefined })
+    await escribirAhora(doc, true)
+  },
+
+  /**
+   * §22.3 — el usuario prefiere lo que hay en disco.
+   *
+   * Tampoco se pierde lo suyo: quedó en `respaldos/conflicto-…-MIO.json`.
+   */
+  async descartarYRecargar() {
+    const r = await window.api?.almacen.cargar()
+    if (r && r.estado === 'ok') {
+      // Volver a cargar renueva la huella en main, así que el siguiente
+      // guardado deja de dar conflicto.
+      set({ doc: migrarDocumento(r.documento), conflictoGuardado: undefined })
+      guardadoBloqueado = false
+    }
   },
 
   async guardarCopiaDeEmergencia() {

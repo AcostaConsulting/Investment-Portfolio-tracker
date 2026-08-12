@@ -143,14 +143,17 @@ function registrarIpc() {
   // contra un archivo bloqueado por OneDrive o marcado de solo lectura fallaba
   // **en absoluto silencio** (AUDITORIA-ROBUSTEZ.md §1.2). Ahora el resultado
   // es un valor que el renderer tiene que mirar.
-  ipcMain.handle('almacen:guardar', async (_evento, documento: unknown) => {
+  ipcMain.handle('almacen:guardar', async (_evento, documento: unknown, forzar?: boolean) => {
     const ahora = Date.now()
     if (ahora - ultimoRespaldo > 10 * 60 * 1000) {
       ultimoRespaldo = ahora
       await respaldar()
     }
     try {
-      await guardar(documento)
+      const r = await guardar(documento, { forzar: forzar === true })
+      // Conflicto: alguien más escribió desde que cargamos (§22.3). No se pisa
+      // su trabajo; las dos versiones ya quedaron respaldadas.
+      if (r.ok === false) return r
       return { ok: true as const }
     } catch (error: unknown) {
       const err = error as NodeJS.ErrnoException

@@ -7,7 +7,9 @@ import { contextBridge, ipcRenderer } from 'electron'
 const api = {
   almacen: {
     cargar: (): Promise<unknown> => ipcRenderer.invoke('almacen:cargar'),
-    guardar: (documento: unknown): Promise<unknown> => ipcRenderer.invoke('almacen:guardar', documento),
+    /** `forzar` = guardar aunque otro haya escrito por debajo (§22.3). */
+    guardar: (documento: unknown, forzar?: boolean): Promise<unknown> =>
+      ipcRenderer.invoke('almacen:guardar', documento, forzar),
     /** Lee un respaldo que el usuario eligió en la pantalla de recuperación. */
     leerRespaldo: (nombre: string): Promise<unknown> => ipcRenderer.invoke('almacen:leerRespaldo', nombre),
     /** Copia el documento y lista respaldos cuando la forma es inutilizable. */

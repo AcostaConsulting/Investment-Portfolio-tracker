@@ -6,6 +6,7 @@
 
 import { app } from 'electron'
 import { copyFile, mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
 import path from 'node:path'
 
 const NOMBRE_DATOS = 'datos.json'
@@ -154,7 +155,12 @@ export async function cargar(): Promise<ResultadoCarga> {
     }
   }
   try {
-    return { estado: 'ok', documento: JSON.parse(texto) }
+    const documento = JSON.parse(texto)
+    // Se anota lo que acabamos de leer: es la referencia contra la que se
+    // comparará antes de cada escritura. Recargar renueva la huella, que es
+    // justo lo que hace la opción "descartar lo mío y recargar".
+    await anotarHuella(texto)
+    return { estado: 'ok', documento }
   } catch (error: unknown) {
     // Existe y tiene contenido, pero no es JSON: truncado, BOM, UTF-16, 0 bytes…
     return {
@@ -204,13 +210,131 @@ export async function leerRespaldo(
   }
 }
 
-/** Guarda con escritura atómica: tmp + rename, nunca un archivo a medias. */
-export async function guardar(documento: unknown): Promise<void> {
+/**
+ * Huella del archivo tal como lo dejamos la última vez que lo leímos o
+ * escribimos. Es lo que permite saber si alguien más lo tocó por debajo.
+ */
+interface Huella {
+  mtimeMs: number
+  size: number
+  sha256: string
+}
+let huella: Huella | undefined
+
+function sha256De(texto: string): string {
+  return createHash('sha256').update(texto, 'utf8').digest('hex')
+}
+
+async function anotarHuella(texto: string): Promise<void> {
+  try {
+    const s = await stat(rutaDatos())
+    huella = { mtimeMs: s.mtimeMs, size: s.size, sha256: sha256De(texto) }
+  } catch {
+    huella = undefined
+  }
+}
+
+/** Solo para las pruebas: olvida lo que creíamos que había en disco. */
+export function olvidarHuella(): void {
+  huella = undefined
+}
+
+export interface ConflictoGuardado {
+  ok: false
+  motivo: 'conflicto'
+  /** Copia de lo que había en disco — el trabajo del OTRO. */
+  copiaExterna: string
+  /** Copia del documento en memoria — el trabajo del USUARIO. */
+  copiaMia: string
+  ruta: string
+}
+
+export type ResultadoGuardado = { ok: true } | ConflictoGuardado
+
+/**
+ * ¿Cambió el archivo desde que lo leímos o lo escribimos?
+ *
+ * Dos niveles, y el segundo es el que evita los falsos positivos:
+ *  1. `stat` (0.057 ms sobre 1.37 MB) como puerta barata.
+ *  2. Sólo si `stat` discrepa, se lee y se hashea (1.98 ms, 35x más caro).
+ *     OneDrive toca la fecha al sincronizar aunque el contenido sea idéntico;
+ *     sin este segundo nivel el aviso saltaría sin motivo, y un aviso que sale
+ *     cuando no debe se aprende a ignorar.
+ */
+async function contenidoAjenoEnDisco(): Promise<string | undefined> {
+  if (!huella) return undefined // Nunca cargamos: no hay nada que preservar.
+  let s: Awaited<ReturnType<typeof stat>>
+  try {
+    s = await stat(rutaDatos())
+  } catch {
+    return undefined // Ya no existe: no hay trabajo ajeno que perder.
+  }
+  if (s.mtimeMs === huella.mtimeMs && s.size === huella.size) return undefined
+  let texto: string
+  try {
+    texto = await readFile(rutaDatos(), 'utf8')
+  } catch {
+    return undefined // Si no se puede leer, el error real saldrá al escribir.
+  }
+  return sha256De(texto) === huella.sha256 ? undefined : texto
+}
+
+/**
+ * Guarda con escritura atómica: tmp + rename, nunca un archivo a medias.
+ *
+ * 🔴 Y ya no escribe a ciegas. Antes sobrescribía lo que hubiera en disco sin
+ * mirar; el 9 de agosto eso costó la corrección del TC del DOF en 22
+ * operaciones del portafolio real, sin que nadie se enterara en un día
+ * (handoff §27.5). El candado de instancia única (§22.2) no cubre esto: un
+ * escritor externo al proceso —OneDrive, un antivirus, alguien copiando el
+ * archivo a mano— no es una segunda instancia.
+ *
+ * Ante un conflicto se respaldan **las dos** versiones antes de devolver nada,
+ * decida lo que decida el usuario después. El respaldo es lo que salvó el dato
+ * en §27.5; no debe depender de que alguien elija bien bajo presión.
+ */
+export async function guardar(
+  documento: unknown,
+  opciones?: { forzar?: boolean },
+): Promise<ResultadoGuardado> {
   const destino = rutaDatos()
-  const temporal = destino + '.tmp'
   const texto = JSON.stringify(documento, null, 2)
+
+  if (!opciones?.forzar) {
+    const ajeno = await contenidoAjenoEnDisco()
+    if (ajeno !== undefined) {
+      const copias = await respaldarConflicto(ajeno, texto)
+      return { ok: false, motivo: 'conflicto', ...copias, ruta: app.getPath('userData') }
+    }
+  }
+
+  const temporal = destino + '.tmp'
   await writeFile(temporal, texto, 'utf8')
   await rename(temporal, destino)
+  // Sin esto, el SIGUIENTE guardado se detectaría a sí mismo como intruso.
+  await anotarHuella(texto)
+  return { ok: true }
+}
+
+/**
+ * Copia las dos versiones en conflicto antes de que nadie decida nada.
+ *
+ * ⚠️ El prefijo es `conflicto-`, NO `datos-`, a propósito: `listarRespaldos()`
+ * filtra por `datos-*.json` y rota a 10, así que unos respaldos llamados
+ * `datos-…` se los llevaría la rotación — justo la evidencia que hay que
+ * conservar.
+ */
+async function respaldarConflicto(
+  textoExterno: string,
+  textoMio: string,
+): Promise<{ copiaExterna: string; copiaMia: string }> {
+  await mkdir(carpetaRespaldos(), { recursive: true })
+  const marca = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
+  const copiaExterna = path.join(carpetaRespaldos(), `conflicto-${marca}-EXTERNO.json`)
+  const copiaMia = path.join(carpetaRespaldos(), `conflicto-${marca}-MIO.json`)
+  await writeFile(copiaExterna, textoExterno, 'utf8')
+  await writeFile(copiaMia, textoMio, 'utf8')
+  return { copiaExterna, copiaMia }
 }
 
 /** Copia el documento actual a la carpeta de respaldos y rota los viejos. */

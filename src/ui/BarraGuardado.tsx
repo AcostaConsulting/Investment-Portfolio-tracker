@@ -37,9 +37,35 @@ const MENSAJE_POR_CODIGO = {
 export function BarraGuardado() {
   const { t } = useTranslation()
   const errorGuardado = useApp((s) => s.errorGuardado)
+  const conflictoGuardado = useApp((s) => s.conflictoGuardado)
   const guardarCopiaDeEmergencia = useApp((s) => s.guardarCopiaDeEmergencia)
+  const guardarDeTodosModos = useApp((s) => s.guardarDeTodosModos)
+  const descartarYRecargar = useApp((s) => s.descartarYRecargar)
   const [guardando, setGuardando] = useState(false)
   const [copiaEn, setCopiaEn] = useState<string | undefined>()
+
+  // §22.3 — otro escribió el archivo por debajo. Va antes que el error de
+  // guardado porque es más grave: aquí hay trabajo de dos dueños en juego, y
+  // resolverlo mal pierde el de alguno. La app ya NO está guardando.
+  if (conflictoGuardado) {
+    return (
+      <div className="barra-guardado" role="alert">
+        <Icono nombre="advertencia" tam={18} />
+        <div className="barra-guardado-texto">
+          <strong>{t('guardado.conflicto')}</strong> <span>{t('guardado.conflictoDetalle')}</span>
+          <div className="mini">{t('guardado.conflictoRespaldos')}</div>
+          <div className="mini barra-guardado-ruta">{conflictoGuardado.copiaExterna}</div>
+          <div className="mini barra-guardado-ruta">{conflictoGuardado.copiaMia}</div>
+        </div>
+        <button className="btn btn-mini" onClick={() => void guardarDeTodosModos()}>
+          {t('guardado.conflictoGuardarMio')}
+        </button>
+        <button className="btn btn-mini" onClick={() => void descartarYRecargar()}>
+          {t('guardado.conflictoRecargar')}
+        </button>
+      </div>
+    )
+  }
 
   if (!errorGuardado) return null
 

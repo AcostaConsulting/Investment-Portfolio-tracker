@@ -532,6 +532,12 @@ export const zh: Diccionario = {
     falloSinEspacio: '磁盘空间已满。',
     falloDetalle: '系统返回：{{error}}',
     guardarCopia: '另存一份…',
+    conflicto: '另一个程序修改了你的文件。',
+    conflictoDetalle:
+      '在你打开应用后，有其他程序写入了你的数据（另一个窗口、OneDrive 或备份工具）。没有覆盖任何内容：请你选择保留哪一个版本。',
+    conflictoRespaldos: '无论你如何选择，两个版本都已保存：',
+    conflictoGuardarMio: '保留我的',
+    conflictoRecargar: '使用磁盘上的文件',
     copiaGuardada: '副本已保存到 {{ruta}}',
   },
   recuperacion: {

@@ -534,6 +534,12 @@ export const fr: Diccionario = {
     falloSinEspacio: 'Il n’y a plus d’espace sur le disque.',
     falloDetalle: 'Le système a répondu : {{error}}',
     guardarCopia: 'Enregistrer une copie…',
+    conflicto: 'Un autre programme a modifié votre fichier.',
+    conflictoDetalle:
+      "Quelque chose d'autre a écrit dans vos données depuis l'ouverture de l'application (une autre fenêtre, OneDrive ou une sauvegarde). Rien n'a été écrasé : à vous de choisir la version à garder.",
+    conflictoRespaldos: 'Les deux versions sont enregistrées, quel que soit votre choix :',
+    conflictoGuardarMio: 'Garder la mienne',
+    conflictoRecargar: 'Utiliser le fichier',
     copiaGuardada: 'Copie enregistrée dans {{ruta}}',
   },
   recuperacion: {

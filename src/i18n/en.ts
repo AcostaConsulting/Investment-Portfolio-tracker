@@ -533,6 +533,12 @@ export const en: Diccionario = {
     falloSinEspacio: 'There is no space left on the disk.',
     falloDetalle: 'The system replied: {{error}}',
     guardarCopia: 'Save a copy…',
+    conflicto: 'Another program changed your file.',
+    conflictoDetalle:
+      'Something else wrote to your data after you opened the app (another window, OneDrive, or a backup tool). Nothing was overwritten: you choose which version to keep.',
+    conflictoRespaldos: 'Both versions are saved, whichever you choose:',
+    conflictoGuardarMio: 'Keep mine',
+    conflictoRecargar: 'Use the file on disk',
     copiaGuardada: 'Copy saved to {{ruta}}',
   },
   recuperacion: {

@@ -536,6 +536,12 @@ export const es = {
     falloSinEspacio: 'No queda espacio en el disco.',
     falloDetalle: 'El sistema respondió: {{error}}',
     guardarCopia: 'Guardar una copia…',
+    conflicto: 'Otro programa cambió tu archivo.',
+    conflictoDetalle:
+      'Alguien más escribió tus datos desde que abriste la app (otra ventana, OneDrive o una copia de seguridad). No se sobrescribió nada: decide tú con cuál te quedas.',
+    conflictoRespaldos: 'Las dos versiones están guardadas, elijas lo que elijas:',
+    conflictoGuardarMio: 'Quedarme con lo mío',
+    conflictoRecargar: 'Usar lo del archivo',
     copiaGuardada: 'Copia guardada en {{ruta}}',
   },
   recuperacion: {

@@ -533,6 +533,12 @@ export const ja: Diccionario = {
     falloSinEspacio: 'ディスクの空き容量がありません。',
     falloDetalle: 'システムの応答：{{error}}',
     guardarCopia: 'コピーを保存…',
+    conflicto: '別のプログラムがファイルを変更しました。',
+    conflictoDetalle:
+      'アプリを開いた後に、別のもの（別のウィンドウ、OneDrive、バックアップツール）がデータに書き込みました。上書きはしていません。どちらを残すか選んでください。',
+    conflictoRespaldos: 'どちらを選んでも、両方のバージョンが保存されています:',
+    conflictoGuardarMio: '自分のものを残す',
+    conflictoRecargar: 'ディスクのファイルを使う',
     copiaGuardada: 'コピーを {{ruta}} に保存しました',
   },
   recuperacion: {

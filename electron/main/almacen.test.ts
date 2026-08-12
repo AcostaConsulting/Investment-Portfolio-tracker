@@ -13,7 +13,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { mkdtempSync, mkdirSync, readFileSync, readdirSync, writeFileSync, rmSync, existsSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, readFileSync, readdirSync, writeFileSync, rmSync, existsSync, utimesSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
@@ -23,7 +23,7 @@ vi.mock('electron', () => ({
   app: { getPath: () => dirPrueba },
 }))
 
-const { cargar, guardar, leerRespaldo, prepararRecuperacion, respaldar, leerZoom, guardarZoom } =
+const { cargar, guardar, leerRespaldo, prepararRecuperacion, respaldar, leerZoom, guardarZoom, olvidarHuella } =
   await import('./almacen')
 
 const rutaDatos = () => path.join(dirPrueba, 'datos.json')
@@ -40,6 +40,9 @@ const DOC = {
 
 beforeEach(() => {
   dirPrueba = mkdtempSync(path.join(tmpdir(), 'almacen-test-'))
+  // La huella de §22.3 es global del módulo y sobrevive entre pruebas: sin
+  // esto, una prueba heredaría lo que otra creyó ver en disco.
+  olvidarHuella()
 })
 afterEach(() => {
   rmSync(dirPrueba, { recursive: true, force: true })
@@ -257,5 +260,140 @@ describe('prepararRecuperacion — para el caso "parsea pero la forma es inútil
     expect(r.copia).toBeTruthy()
     expect(r.bytes).toBeGreaterThan(0)
     expect(r.respaldos).toHaveLength(1)
+  })
+})
+
+/**
+ * §22.3 — escritura ciega sobre disco.
+ *
+ * `guardar()` sobrescribía lo que hubiera en disco sin mirar. El 9 de agosto
+ * eso costó la corrección del TC del DOF en 22 operaciones del portafolio real,
+ * y **nadie lo notó durante un día** (§27.5). Es la única incidencia del
+ * proyecto con pérdida de datos real y silenciosa.
+ *
+ * El candado de instancia única (§22.2) cubre el caso de dos ventanas, pero
+ * **no ve a un escritor externo al proceso**: OneDrive sincronizando desde otro
+ * equipo, un antivirus restaurando, o alguien reemplazando el archivo a mano.
+ *
+ * Estas pruebas se escriben ANTES de la implementación y fallan contra el
+ * código de hoy.
+ */
+describe('§22.3 — guardar deja de escribir a ciegas', () => {
+  const leerDisco = () => JSON.parse(readFileSync(rutaDatos(), 'utf8'))
+  const conflictos = () =>
+    readdirSync(rutaRespaldos()).filter((n) => n.startsWith('conflicto-'))
+
+  it('un guardado normal NO da conflicto (cero falsos positivos)', async () => {
+    writeFileSync(rutaDatos(), JSON.stringify(DOC), 'utf8')
+    await cargar()
+    const r = await guardar({ ...DOC, marca: 'mio' })
+    expect(r.ok).toBe(true)
+    expect(leerDisco().marca).toBe('mio')
+  })
+
+  it('dos guardados seguidos no se detectan a sí mismos', async () => {
+    writeFileSync(rutaDatos(), JSON.stringify(DOC), 'utf8')
+    await cargar()
+    expect((await guardar({ ...DOC, n: 1 })).ok).toBe(true)
+    expect((await guardar({ ...DOC, n: 2 })).ok).toBe(true)
+    expect((await guardar({ ...DOC, n: 3 })).ok).toBe(true)
+    expect(leerDisco().n).toBe(3)
+  })
+
+  it('detecta que otro escribió y NO pisa su trabajo', async () => {
+    writeFileSync(rutaDatos(), JSON.stringify(DOC), 'utf8')
+    await cargar()
+    // El "otro": OneDrive, un antivirus, o la ventana huérfana de §8.
+    writeFileSync(rutaDatos(), JSON.stringify({ ...DOC, deOtro: true, relleno: 'x'.repeat(500) }), 'utf8')
+
+    const r = await guardar({ ...DOC, mio: true })
+    expect(r.ok).toBe(false)
+    if (r.ok === false) expect(r.motivo).toBe('conflicto')
+    // Lo que estaba en disco sigue ahí: no se destruyó el trabajo del otro.
+    expect(leerDisco().deOtro).toBe(true)
+    expect(leerDisco().mio).toBeUndefined()
+  })
+
+  it('respalda LAS DOS versiones antes de preguntar nada', async () => {
+    writeFileSync(rutaDatos(), JSON.stringify(DOC), 'utf8')
+    await cargar()
+    writeFileSync(rutaDatos(), JSON.stringify({ ...DOC, deOtro: true, relleno: 'y'.repeat(500) }), 'utf8')
+    const r = await guardar({ ...DOC, mio: true })
+
+    expect(r.ok).toBe(false)
+    if (r.ok === false && r.motivo === 'conflicto') {
+      const externo = JSON.parse(readFileSync(r.copiaExterna, 'utf8'))
+      const mio = JSON.parse(readFileSync(r.copiaMia, 'utf8'))
+      expect(externo.deOtro).toBe(true)
+      expect(mio.mio).toBe(true)
+    }
+    expect(conflictos()).toHaveLength(2)
+  })
+
+  it('los respaldos del conflicto sobreviven a la rotación de 10', async () => {
+    writeFileSync(rutaDatos(), JSON.stringify(DOC), 'utf8')
+    await cargar()
+    writeFileSync(rutaDatos(), JSON.stringify({ ...DOC, deOtro: true, relleno: 'z'.repeat(500) }), 'utf8')
+    await guardar({ ...DOC, mio: true })
+    expect(conflictos()).toHaveLength(2)
+
+    // 14 respaldos normales: la rotación deja 10 y no debe tocar los del conflicto.
+    for (let i = 0; i < 14; i++) {
+      writeFileSync(rutaDatos(), JSON.stringify({ ...DOC, i }), 'utf8')
+      await respaldar()
+    }
+    expect(conflictos()).toHaveLength(2)
+  })
+
+  it('un cambio de mtime SIN cambio de contenido no dispara el aviso', async () => {
+    // OneDrive toca la fecha al sincronizar aunque el contenido sea idéntico.
+    // Si eso avisara, el aviso se aprendería a ignorar y no serviría de nada.
+    writeFileSync(rutaDatos(), JSON.stringify(DOC), 'utf8')
+    await cargar()
+    const futuro = new Date(Date.now() + 60_000)
+    utimesSync(rutaDatos(), futuro, futuro)
+
+    const r = await guardar({ ...DOC, mio: true })
+    expect(r.ok).toBe(true)
+    expect(leerDisco().mio).toBe(true)
+  })
+
+  it('con `forzar` guarda de todos modos (la opción del usuario)', async () => {
+    writeFileSync(rutaDatos(), JSON.stringify(DOC), 'utf8')
+    await cargar()
+    writeFileSync(rutaDatos(), JSON.stringify({ ...DOC, deOtro: true, relleno: 'w'.repeat(500) }), 'utf8')
+    expect((await guardar({ ...DOC, mio: true })).ok).toBe(false)
+
+    const r = await guardar({ ...DOC, mio: true }, { forzar: true })
+    expect(r.ok).toBe(true)
+    expect(leerDisco().mio).toBe(true)
+  })
+
+  it('tras forzar, el siguiente guardado normal ya no da conflicto', async () => {
+    writeFileSync(rutaDatos(), JSON.stringify(DOC), 'utf8')
+    await cargar()
+    writeFileSync(rutaDatos(), JSON.stringify({ ...DOC, deOtro: true, relleno: 'v'.repeat(500) }), 'utf8')
+    await guardar({ ...DOC, mio: true })
+    await guardar({ ...DOC, mio: true }, { forzar: true })
+    expect((await guardar({ ...DOC, otra: 1 })).ok).toBe(true)
+  })
+
+  it('si el archivo desapareció, guarda sin avisar (no hay trabajo ajeno que perder)', async () => {
+    writeFileSync(rutaDatos(), JSON.stringify(DOC), 'utf8')
+    await cargar()
+    rmSync(rutaDatos())
+    const r = await guardar({ ...DOC, mio: true })
+    expect(r.ok).toBe(true)
+  })
+
+  it('tras recargar del disco, guardar vuelve a ser normal', async () => {
+    writeFileSync(rutaDatos(), JSON.stringify(DOC), 'utf8')
+    await cargar()
+    writeFileSync(rutaDatos(), JSON.stringify({ ...DOC, deOtro: true, relleno: 'u'.repeat(500) }), 'utf8')
+    expect((await guardar({ ...DOC, mio: true })).ok).toBe(false)
+
+    // "Descartar lo mío y recargar" = volver a cargar: la huella se renueva.
+    await cargar()
+    expect((await guardar({ ...DOC, tras: 'recargar' })).ok).toBe(true)
   })
 })
