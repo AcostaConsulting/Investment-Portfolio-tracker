@@ -319,6 +319,7 @@ export const ja: Diccionario = {
     preciosActualizados: '価格を更新しました',
     actualizaciones: 'アプリの更新を確認',
     actualizacionesAyuda: 'GitHub Releases から。インストール時期はあなた次第。勝手に再起動しません。',
+    actualizacionesStore: 'このバージョンは Microsoft Store から自動更新されます。',
     buscarActualizacion: '今すぐ確認',
     actualizacionDisponible: 'バージョン {{version}} が利用可能',
     actualizacionNinguna: 'すでに最新バージョンです',

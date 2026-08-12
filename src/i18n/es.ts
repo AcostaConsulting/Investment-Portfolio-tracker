@@ -322,6 +322,7 @@ export const es = {
     preciosActualizados: 'Precios actualizados',
     actualizaciones: 'Buscar actualizaciones de la app',
     actualizacionesAyuda: 'Desde GitHub Releases. Tú decides cuándo instalar; nunca se reinicia solo.',
+    actualizacionesStore: 'Esta versión se actualiza sola desde Microsoft Store.',
     buscarActualizacion: 'Buscar ahora',
     actualizacionDisponible: 'Versión {{version}} disponible',
     actualizacionNinguna: 'Ya tienes la última versión',

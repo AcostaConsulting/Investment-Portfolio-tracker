@@ -319,6 +319,7 @@ export const fr: Diccionario = {
     preciosActualizados: 'Prix mis à jour',
     actualizaciones: 'Vérifier les mises à jour de l’app',
     actualizacionesAyuda: 'Depuis GitHub Releases. Vous décidez quand installer ; jamais de redémarrage forcé.',
+    actualizacionesStore: 'Cette version se met à jour via le Microsoft Store.',
     buscarActualizacion: 'Vérifier maintenant',
     actualizacionDisponible: 'Version {{version}} disponible',
     actualizacionNinguna: 'Vous avez déjà la dernière version',

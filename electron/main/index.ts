@@ -3,7 +3,7 @@ import path from 'node:path'
 import { cargar, guardar, leerRespaldo, prepararRecuperacion, respaldar, leerZoom, guardarZoom } from './almacen'
 import { obtenerJson } from './red'
 import { abrirArchivo, guardarArchivo, type FiltroArchivo } from './dialogo'
-import { buscar, descargar, instalarAhora } from './actualizador'
+import { buscar, descargar, esCanalStore, instalarAhora } from './actualizador'
 
 const esDev = !!process.env.VITE_DEV_SERVER_URL
 
@@ -186,6 +186,9 @@ function registrarIpc() {
   ipcMain.handle('sistema:info', () => ({
     version: app.getVersion(),
     plataforma: process.platform,
+    // Para que la UI no ofrezca "buscar actualizaciones" en el build de Store,
+    // donde no haria nada (§30). Un boton muerto es peor que no tenerlo.
+    canalStore: esCanalStore(),
   }))
 
   ipcMain.handle('actualizador:buscar', () => buscar())

@@ -81,7 +81,7 @@ export interface ApiPreload {
     }): Promise<ResultadoAbrirArchivo>
   }
   sistema: {
-    info(): Promise<{ version: string; plataforma: string }>
+    info(): Promise<{ version: string; plataforma: string; canalStore?: boolean }>
   }
   actualizador: {
     buscar(): Promise<EstadoActualizador>

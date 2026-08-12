@@ -319,6 +319,7 @@ export const zh: Diccionario = {
     preciosActualizados: '价格已更新',
     actualizaciones: '检查应用更新',
     actualizacionesAyuda: '来自 GitHub Releases。何时安装由你决定；绝不自动重启。',
+    actualizacionesStore: '此版本通过 Microsoft Store 自动更新。',
     buscarActualizacion: '立即检查',
     actualizacionDisponible: '有新版本 {{version}}',
     actualizacionNinguna: '已是最新版本',

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApp } from '../../state/store'
 import { IDIOMAS } from '../../i18n'
@@ -20,6 +20,7 @@ import { CampoNumero } from '../../ui/CampoNumero'
 import { CampoAjusteNumero } from '../../ui/CampoAjusteNumero'
 
 export function Configuracion() {
+  const canalStore = useCanalStore()
   const { t } = useTranslation()
   const doc = useApp((s) => s.doc)
   const plan = useApp((s) => s.plan)
@@ -253,19 +254,29 @@ export function Configuracion() {
               )}
             </div>
           )}
-          <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={ajustes.buscarActualizaciones}
-              onChange={(e) => actualizarAjustes({ buscarActualizaciones: e.target.checked })}
-            />
-            <span>
+          {canalStore ? (
+            <p className="mini suave" style={{ margin: 0 }}>
               <strong>{t('configuracion.actualizaciones')}</strong>
               <br />
-              <span className="mini suave">{t('configuracion.actualizacionesAyuda')}</span>
-            </span>
-          </label>
-          {ajustes.buscarActualizaciones && <Actualizador />}
+              {t('configuracion.actualizacionesStore')}
+            </p>
+          ) : (
+            <>
+              <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={ajustes.buscarActualizaciones}
+                  onChange={(e) => actualizarAjustes({ buscarActualizaciones: e.target.checked })}
+                />
+                <span>
+                  <strong>{t('configuracion.actualizaciones')}</strong>
+                  <br />
+                  <span className="mini suave">{t('configuracion.actualizacionesAyuda')}</span>
+                </span>
+              </label>
+              {ajustes.buscarActualizaciones && <Actualizador />}
+            </>
+          )}
         </div>
       </div>
 
@@ -399,6 +410,19 @@ function Actualizador() {
       )}
     </div>
   )
+}
+
+/**
+ * ¿Este build es el de Microsoft Store? Ahí las actualizaciones las gestiona la
+ * Store y `electron-updater` ni se inicializa (§30), así que ofrecer "buscar
+ * actualizaciones" sería un control muerto — peor que no tenerlo.
+ */
+function useCanalStore(): boolean {
+  const [canalStore, setCanalStore] = useState(false)
+  useEffect(() => {
+    void window.api?.sistema.info().then((i) => setCanalStore(i.canalStore === true))
+  }, [])
+  return canalStore
 }
 
 function AcercaDe() {

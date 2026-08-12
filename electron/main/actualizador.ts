@@ -56,6 +56,26 @@ const registro = {
   debug: (m: string) => escribir('debug', m),
 }
 
+/**
+ * 🔴 ¿Es este un build para Microsoft Store? Entonces electron-updater NO
+ * arranca: las actualizaciones las gestiona la Store.
+ *
+ * **Dos capas a propósito, no una.** Un fallo aquí significa un paquete de
+ * Store que se auto-actualiza por fuera de la Store — y como un MSIX vive en
+ * `WindowsApps`, que es de sólo lectura y firmado, `electron-updater` no puede
+ * parchearlo: instalaría el NSIS **al lado**, dejando dos Patrimos conviviendo
+ * y el escenario de datos divididos de H2 provocado por nosotros (§27.2).
+ *
+ *  1. `process.windowsStore`: lo que Electron detecta en runtime.
+ *  2. `PATRIMO_CANAL`: constante congelada por esbuild en tiempo de build
+ *     (`scripts/build-electron.mjs`), que no depende de esa detección.
+ *
+ * Basta con que UNA diga que sí.
+ */
+export function esCanalStore(): boolean {
+  return process.windowsStore === true || process.env.PATRIMO_CANAL === 'store'
+}
+
 let configurado = false
 
 function configurar(): void {
@@ -69,6 +89,8 @@ function configurar(): void {
 
 export async function buscar(): Promise<EstadoActualizador> {
   if (!app.isPackaged) return { estado: 'sin-actualizacion' }
+  // En el canal Store nunca se contacta a GitHub: actualiza la Store.
+  if (esCanalStore()) return { estado: 'sin-actualizacion' }
   configurar()
   try {
     const resultado = await autoUpdater.checkForUpdates()
@@ -84,6 +106,7 @@ export async function buscar(): Promise<EstadoActualizador> {
 
 export async function descargar(): Promise<EstadoActualizador> {
   if (!app.isPackaged) return { estado: 'sin-actualizacion' }
+  if (esCanalStore()) return { estado: 'sin-actualizacion' }
   configurar()
   // 🔴 Tiene que quedar en true ANTES de descargar. electron-updater registra el
   // handler de 'quit' dentro del callback de fin de descarga y lo omite si la
@@ -103,5 +126,6 @@ export async function descargar(): Promise<EstadoActualizador> {
 /** El usuario eligió reiniciar ya: instala en silencio y vuelve a abrir la app. */
 export function instalarAhora(): void {
   if (!app.isPackaged) return
+  if (esCanalStore()) return
   autoUpdater.quitAndInstall(true, true)
 }
